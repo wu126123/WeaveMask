@@ -1,13 +1,20 @@
 package com.topjohnwu.magisk.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.res.painterResource
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +52,7 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import com.topjohnwu.magisk.core.R as CoreR
 import com.topjohnwu.magisk.core.Info
+import com.topjohnwu.magisk.utils.TextHolder
 
 /**
  * 主页面屏幕
@@ -62,6 +70,11 @@ fun HomeScreen(
         backgroundColor = MiuixTheme.colorScheme.surface,
         tint = HazeTint(MiuixTheme.colorScheme.surface.copy(0.8f))
     )
+
+    // 启动时加载数据
+    LaunchedEffect(Unit) {
+        viewModel.startLoading()
+    }
 
     Scaffold(
         modifier = modifier,
@@ -91,9 +104,16 @@ fun HomeScreen(
             contentPadding = innerPadding,
             overscrollEffect = null
         ) {
-            // 通知卡片
-            if (viewModel.isNoticeVisible) {
-                item {
+            // 通知卡片 - 使用 AnimatedVisibility 添加消失动画
+            item {
+                AnimatedVisibility(
+                    visible = viewModel.isNoticeVisible,
+                    exit = shrinkVertically(
+                        animationSpec = tween(durationMillis = 300)
+                    ) + fadeOut(
+                        animationSpec = tween(durationMillis = 300)
+                    )
+                ) {
                     NoticeCard(
                         onHide = { viewModel.hideNotice() }
                     )
@@ -141,9 +161,9 @@ fun HomeScreen(
             item {
                 ManagerCard(
                     appState = viewModel.appState,
-                    remoteVersion = viewModel.managerRemoteVersion.toString(),
+                    remoteVersion = viewModel.managerRemoteVersion.getText(context.resources).toString(),
                     installedVersion = viewModel.managerInstalledVersion,
-                    packageName = context.packageName,
+                    packageName = viewModel.managerPackageName,
                     progress = viewModel.stateManagerProgress,
                     onPressed = { viewModel.onManagerPressed() }
                 )
@@ -167,9 +187,9 @@ fun HomeScreen(
                 )
             }
 
-            // 底部间距
+            // 底部间距 - 增加足够的间距确保最后一个卡片内容可以正常显示，不会被导航栏遮挡
             item {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(48.dp))
             }
         }
     }
@@ -300,12 +320,6 @@ private fun MagiskCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            HomeItemRow(
-                label = context.getString(CoreR.string.home_installed_version),
-                value = installedVersion
-            )
         }
     }
 }
@@ -333,7 +347,7 @@ private fun StatusLabel(state: HomeViewModel.State) {
 
 /**
  * Zygisk 状态卡片
- * 显示 Zygisk 启用/禁用状态
+ * 显示 Zygisk 启用/禁用状态 - 使用扁形水平布局
  */
 @Composable
 private fun ZygiskCard(
@@ -344,32 +358,31 @@ private fun ZygiskCard(
     val statusColor = if (isEnabled) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
 
     Card(modifier = modifier) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = MiuixIcons.Settings,
                 contentDescription = null,
                 tint = statusColor,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = context.getString(CoreR.string.zygisk),
-                style = MiuixTheme.textStyles.body1,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                style = MiuixTheme.textStyles.body2,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = if (isEnabled) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
-                style = MiuixTheme.textStyles.footnote1,
+                style = MiuixTheme.textStyles.body2,
                 color = statusColor,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -377,7 +390,7 @@ private fun ZygiskCard(
 
 /**
  * Ramdisk 状态卡片
- * 显示 Ramdisk 可用/不可用状态
+ * 显示 Ramdisk 可用/不可用状态 - 使用扁形水平布局
  */
 @Composable
 private fun RamdiskCard(
@@ -388,32 +401,31 @@ private fun RamdiskCard(
     val statusColor = if (isAvailable) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
 
     Card(modifier = modifier) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = MiuixIcons.Layers,
                 contentDescription = null,
                 tint = statusColor,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Ramdisk",
-                style = MiuixTheme.textStyles.body1,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                style = MiuixTheme.textStyles.body2,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = if (isAvailable) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
-                style = MiuixTheme.textStyles.footnote1,
+                style = MiuixTheme.textStyles.body2,
                 color = statusColor,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -492,10 +504,15 @@ private fun ManagerCard(
                             Text(text = context.getString(CoreR.string.install))
                         }
                     }
-                    else -> {
-                        CircularProgressIndicator(
-                            size = 24.dp,
-                            strokeWidth = 2.dp
+                    HomeViewModel.State.LOADING -> {
+                        // 加载状态不显示转圈图标
+                    }
+                    HomeViewModel.State.INVALID -> {
+                        // 无网络或加载失败时显示错误提示
+                        Text(
+                            text = context.getString(CoreR.string.no_connection),
+                            style = MiuixTheme.textStyles.body2,
+                            color = MiuixTheme.colorScheme.error
                         )
                     }
                 }
@@ -506,14 +523,17 @@ private fun ManagerCard(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // 最新版本显示远程版本号
                 HomeItemRow(
                     label = context.getString(CoreR.string.home_latest_version),
                     value = remoteVersion
                 )
+                // 已安装版本
                 HomeItemRow(
                     label = context.getString(CoreR.string.home_installed_version),
                     value = installedVersion
                 )
+                // 包名
                 HomeItemRow(
                     label = context.getString(CoreR.string.home_package),
                     value = packageName
@@ -602,12 +622,34 @@ private fun SupportCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                IconLinkItem(
-                    onClick = { onLinkPressed(IconLink.Patreon.link) }
-                )
-                IconLinkItem(
-                    onClick = { onLinkPressed(IconLink.PayPal.Project.link) }
-                )
+                // Patreon 图标
+                Box(
+                    modifier = Modifier
+                        .clickable { onLinkPressed(IconLink.Patreon.link) }
+                        .padding(8.dp)
+                        .size(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = CoreR.drawable.ic_patreon),
+                        contentDescription = context.getString(CoreR.string.patreon),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                // PayPal 图标
+                Box(
+                    modifier = Modifier
+                        .clickable { onLinkPressed(IconLink.PayPal.Project.link) }
+                        .padding(8.dp)
+                        .size(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = CoreR.drawable.ic_paypal),
+                        contentDescription = context.getString(CoreR.string.paypal),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
@@ -740,6 +782,8 @@ private fun DeveloperItem(
     links: List<IconLink>,
     onLinkPressed: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -757,13 +801,22 @@ private fun DeveloperItem(
             modifier = Modifier.horizontalScroll(rememberScrollState())
         ) {
             links.forEach { link ->
+                val iconRes = when (link) {
+                    is IconLink.Patreon -> CoreR.drawable.ic_patreon
+                    is IconLink.PayPal -> CoreR.drawable.ic_paypal
+                    is IconLink.Twitter -> CoreR.drawable.ic_twitter
+                    is IconLink.Github -> CoreR.drawable.ic_github
+                    is IconLink.Sponsor -> CoreR.drawable.ic_favorite
+                    else -> CoreR.drawable.ic_more
+                }
+
                 IconButton(
                     onClick = { onLinkPressed(link.link) },
                     modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(
-                        imageVector = MiuixIcons.Download,
-                        contentDescription = null,
+                    Image(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = context.getString(link.title),
                         modifier = Modifier.size(20.dp)
                     )
                 }

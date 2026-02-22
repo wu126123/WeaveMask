@@ -4,6 +4,9 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import androidx.databinding.Bindable
 import com.topjohnwu.magisk.BR
@@ -27,6 +30,7 @@ import com.topjohnwu.magisk.dialog.EnvFixDialog
 import com.topjohnwu.magisk.dialog.ManagerInstallDialog
 import com.topjohnwu.magisk.dialog.UninstallDialog
 import com.topjohnwu.magisk.events.SnackbarEvent
+import com.topjohnwu.magisk.utils.TextHolder
 import com.topjohnwu.magisk.utils.asText
 import com.topjohnwu.superuser.Shell
 import kotlin.math.roundToInt
@@ -45,9 +49,12 @@ class HomeViewModel(
     val appTitleBarrierIds =
         intArrayOf(R.id.home_manager_icon, R.id.home_manager_title, R.id.home_manager_button)
 
-    @get:Bindable
-    var isNoticeVisible = Config.safetyNotice
-        set(value) = set(value, field, { field = it }, BR.noticeVisible)
+    /**
+     * 通知卡片是否可见
+     * 使用 Compose State 以便在状态变化时自动重组 UI
+     */
+    var isNoticeVisible by mutableStateOf(Config.safetyNotice)
+        private set
 
     val magiskState
         get() = when {
@@ -57,9 +64,12 @@ class HomeViewModel(
             else -> State.UP_TO_DATE
         }
 
-    @get:Bindable
-    var appState = State.LOADING
-        set(value) = set(value, field, { field = it }, BR.appState)
+    /**
+     * App 状态
+     * 使用 Compose State 以便在状态变化时自动重组 UI
+     */
+    var appState by mutableStateOf(State.LOADING)
+        private set
 
     val magiskInstalledVersion
         get() = Info.env.run {
@@ -69,13 +79,22 @@ class HomeViewModel(
                 CoreR.string.not_available.asText()
         }
 
-    @get:Bindable
-    var managerRemoteVersion = CoreR.string.loading.asText()
-        set(value) = set(value, field, { field = it }, BR.managerRemoteVersion)
+    /**
+     * 远程版本号
+     * 使用 Compose State 以便在状态变化时自动重组 UI
+     */
+    var managerRemoteVersion by mutableStateOf<TextHolder>(CoreR.string.loading.asText())
+        private set
 
     val managerInstalledVersion
         get() = "${BuildConfig.APP_VERSION_NAME} (${BuildConfig.APP_VERSION_CODE})" +
             if (BuildConfig.DEBUG) " (D)" else ""
+
+    /**
+     * 应用包名
+     */
+    val managerPackageName
+        get() = BuildConfig.APP_PACKAGE_NAME
 
     @get:Bindable
     var stateManagerProgress = 0
@@ -142,6 +161,10 @@ class HomeViewModel(
         HomeFragmentDirections.actionHomeFragmentToInstallFragment().navigate()
     }
 
+    /**
+     * 隐藏通知卡片
+     * 将状态保存到配置并更新 UI 状态
+     */
     fun hideNotice() {
         Config.safetyNotice = false
         isNoticeVisible = false
