@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.parcelize")
     id("com.android.legacy-kapt")
     id("androidx.navigation.safeargs.kotlin")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.10"
 }
 
 setupMainApk()
@@ -81,3 +81,4 @@ dependencies {
     // Make sure kapt runs with a proper kotlin-stdlib
     kapt(kotlin("stdlib"))
 }
+
