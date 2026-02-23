@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.chrisbanes.haze.HazeState
@@ -38,10 +39,15 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 /**
  * 超级用户页面
  * 使用 Compose 实现超级用户授权管理界面
+ *
+ * @param viewModel 超级用户 ViewModel
+ * @param bottomPadding 底部内边距，用于避免内容被底部导航栏遮挡
+ * @param modifier Modifier
  */
 @Composable
 fun SuperuserScreen(
     viewModel: SuperuserViewModel,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -68,7 +74,6 @@ fun SuperuserScreen(
                     title = context.getString(CoreR.string.superuser)
                 )
             },
-            contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
             content = { paddingValues ->
                 Box(
                     modifier = Modifier
@@ -86,7 +91,8 @@ fun SuperuserScreen(
                         else -> {
                             PolicyList(
                                 policies = policies,
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                bottomPadding = bottomPadding
                             )
                         }
                     }
@@ -140,11 +146,16 @@ private fun EmptyContent() {
 
 /**
  * 策略列表
+ *
+ * @param policies 策略列表
+ * @param viewModel 超级用户 ViewModel
+ * @param bottomPadding 底部内边距
  */
 @Composable
 private fun PolicyList(
     policies: List<PolicyRvItem>,
-    viewModel: SuperuserViewModel
+    viewModel: SuperuserViewModel,
+    bottomPadding: Dp
 ) {
     LazyColumn(
         modifier = Modifier
@@ -167,7 +178,10 @@ private fun PolicyList(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(16.dp)) }
+        // 底部间距 - 使用传入的 bottomPadding 确保最后一个卡片内容可以正常显示
+        item {
+            Spacer(modifier = Modifier.height(bottomPadding))
+        }
     }
 }
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -35,10 +36,15 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 /**
  * 模块列表页面
  * 使用 Compose 实现模块管理界面
+ *
+ * @param viewModel 模块 ViewModel
+ * @param bottomPadding 底部内边距，用于避免内容被底部导航栏遮挡
+ * @param modifier Modifier
  */
 @Composable
 fun ModuleScreen(
     viewModel: ModuleViewModel,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -62,11 +68,11 @@ fun ModuleScreen(
                     title = context.getString(CoreR.string.modules)
                 )
             },
-            contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
             content = { paddingValues ->
                 ModuleListContent(
                     viewModel = viewModel,
                     paddingValues = paddingValues,
+                    bottomPadding = bottomPadding,
                     hazeState = hazeState
                 )
             }
@@ -77,11 +83,17 @@ fun ModuleScreen(
 /**
  * 模块列表内容区域
  * 处理加载状态、空状态和列表显示
+ *
+ * @param viewModel 模块 ViewModel
+ * @param paddingValues 内边距
+ * @param bottomPadding 底部内边距
+ * @param hazeState Haze 状态
  */
 @Composable
 private fun ModuleListContent(
     viewModel: ModuleViewModel,
     paddingValues: PaddingValues,
+    bottomPadding: Dp,
     hazeState: HazeState
 ) {
     val context = LocalContext.current
@@ -104,7 +116,8 @@ private fun ModuleListContent(
             else -> {
                 ModuleList(
                     viewModel = viewModel,
-                    items = items
+                    items = items,
+                    bottomPadding = bottomPadding
                 )
             }
         }
@@ -156,11 +169,16 @@ private fun EmptyContent() {
 /**
  * 模块列表
  * 使用 LazyColumn 显示所有模块项
+ *
+ * @param viewModel 模块 ViewModel
+ * @param items 模块列表
+ * @param bottomPadding 底部内边距
  */
 @Composable
 private fun ModuleList(
     viewModel: ModuleViewModel,
-    items: List<Any>
+    items: List<Any>,
+    bottomPadding: Dp
 ) {
     LazyColumn(
         modifier = Modifier
@@ -187,7 +205,10 @@ private fun ModuleList(
             }
         }
 
-        item { Spacer(modifier = Modifier.height(16.dp)) }
+        // 底部间距 - 使用传入的 bottomPadding 确保最后一个卡片内容可以正常显示
+        item {
+            Spacer(modifier = Modifier.height(bottomPadding))
+        }
     }
 }
 

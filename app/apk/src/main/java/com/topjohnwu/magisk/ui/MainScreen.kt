@@ -1,5 +1,7 @@
 package com.topjohnwu.magisk.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -34,6 +37,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.NavigationBar
 import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -131,6 +135,7 @@ fun MainScreen(
             contentWindowInsets = WindowInsets(0)
         ) { paddingValues ->
             val layoutDirection = LocalLayoutDirection.current
+            val bottomPadding = paddingValues.calculateBottomPadding()
             MainNavHost(
                 navController = navController,
                 homeViewModel = homeViewModel,
@@ -138,6 +143,7 @@ fun MainScreen(
                 superuserViewModel = superuserViewModel,
                 logViewModel = logViewModel,
                 settingsViewModel = settingsViewModel,
+                bottomPadding = bottomPadding,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(
@@ -200,32 +206,41 @@ private fun MainBottomBar(
 
     val bottomNavItems = getBottomNavItems()
 
-    NavigationBar(
+    Column(
         modifier = Modifier
             .hazeEffect(hazeState) {
                 style = hazeStyle
                 blurRadius = 30.dp
                 noiseFactor = 0f
-            },
-        color = Color.Transparent
+            }
+            .background(Color.Transparent)
     ) {
-        bottomNavItems.forEach { item ->
-            NavigationBarItem(
-                selected = currentRoute == item.screen.route,
-                onClick = {
-                    if (currentRoute != item.screen.route) {
-                        navController.navigate(item.screen.route) {
-                            popUpTo(Screen.Home.route) {
-                                saveState = true
+        HorizontalDivider(
+            thickness = 0.6.dp,
+            color = MiuixTheme.colorScheme.dividerLine.copy(0.8f)
+        )
+        NavigationBar(
+            color = Color.Transparent,
+            showDivider = false
+        ) {
+            bottomNavItems.forEach { item ->
+                NavigationBarItem(
+                    selected = currentRoute == item.screen.route,
+                    onClick = {
+                        if (currentRoute != item.screen.route) {
+                            navController.navigate(item.screen.route) {
+                                popUpTo(Screen.Home.route) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
-                    }
-                },
-                icon = item.icon,
-                label = context.getString(item.labelResId)
-            )
+                    },
+                    icon = item.icon,
+                    label = context.getString(item.labelResId)
+                )
+            }
         }
     }
 }
@@ -240,6 +255,7 @@ private fun MainBottomBar(
  * @param superuserViewModel 超级用户 ViewModel
  * @param logViewModel 日志 ViewModel
  * @param settingsViewModel 设置 ViewModel
+ * @param bottomPadding 底部内边距，用于避免内容被底部导航栏遮挡
  * @param modifier Modifier
  */
 @Composable
@@ -250,6 +266,7 @@ private fun MainNavHost(
     superuserViewModel: SuperuserViewModel,
     logViewModel: LogViewModel,
     settingsViewModel: SettingsViewModel,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -259,25 +276,29 @@ private fun MainNavHost(
     ) {
         composable(Screen.Home.route) {
             HomeScreen(
-                viewModel = homeViewModel
+                viewModel = homeViewModel,
+                bottomPadding = bottomPadding
             )
         }
 
         composable(Screen.Superuser.route) {
             SuperuserScreen(
-                viewModel = superuserViewModel
+                viewModel = superuserViewModel,
+                bottomPadding = bottomPadding
             )
         }
 
         composable(Screen.Module.route) {
             ModuleScreen(
-                viewModel = moduleViewModel
+                viewModel = moduleViewModel,
+                bottomPadding = bottomPadding
             )
         }
 
         composable(Screen.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel,
+                bottomPadding = bottomPadding,
                 onNavigateToLog = {
                     navController.navigate(Screen.Log.route)
                 }

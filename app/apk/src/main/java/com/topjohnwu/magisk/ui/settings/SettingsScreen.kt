@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutManagerCompat
 import com.topjohnwu.magisk.core.BuildConfig
@@ -88,10 +89,16 @@ import com.topjohnwu.magisk.core.R as CoreR
 /**
  * 设置页面主屏幕
  * 使用 Miuix 组件实现符合 MIUI 风格的设置列表界面
+ *
+ * @param viewModel 设置 ViewModel
+ * @param bottomPadding 底部内边距，用于避免内容被底部导航栏遮挡
+ * @param onNavigateToLog 导航到日志页面的回调
+ * @param modifier Modifier
  */
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    bottomPadding: Dp,
     onNavigateToLog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -136,8 +143,7 @@ fun SettingsScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        popupHost = { },
-        contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal)
+        popupHost = { }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -701,9 +707,9 @@ fun SettingsScreen(
                 }
             }
 
-            // 底部留白
+            // 底部留白 - 使用传入的 bottomPadding 确保最后一个卡片内容可以正常显示
             item {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(bottomPadding))
             }
         }
     }

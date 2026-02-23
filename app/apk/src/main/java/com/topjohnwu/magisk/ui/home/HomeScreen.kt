@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -59,10 +60,15 @@ import com.topjohnwu.magisk.utils.TextHolder
 /**
  * 主页面屏幕
  * 显示 Magisk 状态、管理器信息和开发者链接
+ *
+ * @param viewModel 主页 ViewModel
+ * @param bottomPadding 底部内边距，用于避免内容被底部导航栏遮挡
+ * @param modifier Modifier
  */
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -92,8 +98,7 @@ fun HomeScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        popupHost = { },
-        contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal)
+        popupHost = { }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -189,9 +194,9 @@ fun HomeScreen(
                 )
             }
 
-            // 底部间距 - 增加足够的间距确保最后一个卡片内容可以正常显示，不会被导航栏遮挡
+            // 底部间距 - 使用传入的 bottomPadding 确保最后一个卡片内容可以正常显示，不会被导航栏遮挡
             item {
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(bottomPadding))
             }
         }
     }
