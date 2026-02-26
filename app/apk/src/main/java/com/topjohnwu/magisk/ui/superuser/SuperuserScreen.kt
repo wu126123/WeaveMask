@@ -3,7 +3,6 @@ package com.topjohnwu.magisk.ui.superuser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -63,6 +62,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.MoreCircle
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import kotlin.math.roundToInt
 
 /**
@@ -331,7 +331,9 @@ private fun PolicyItem(
         modifier = modifier
             .fillMaxWidth()
             .alpha(cardAlpha),
-        cornerRadius = 12.dp
+        cornerRadius = 12.dp,
+        onClick = onToggleExpanded,
+        pressFeedbackType = PressFeedbackType.Sink
     ) {
         Column(
             modifier = Modifier
@@ -339,9 +341,7 @@ private fun PolicyItem(
                 .padding(16.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onToggleExpanded),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 androidx.compose.foundation.Image(
