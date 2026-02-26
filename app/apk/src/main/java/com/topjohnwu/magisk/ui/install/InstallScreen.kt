@@ -8,12 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import top.yukonga.miuix.kmp.basic.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -25,15 +20,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.core.net.toUri
-import androidx.lifecycle.Observer
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.lifecycle.Observer
 import com.topjohnwu.magisk.R
 import com.topjohnwu.magisk.core.Config
 import com.topjohnwu.magisk.core.Info
 import com.topjohnwu.magisk.core.R as CoreR
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -41,6 +38,7 @@ import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -48,9 +46,6 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
@@ -405,12 +400,6 @@ private fun MethodCard(
     } else {
         MiuixTheme.colorScheme.disabledOnPrimaryButton
     }
-    val methodRadioColors = RadioButtonDefaults.colors(
-        selectedColor = MiuixTheme.colorScheme.primary,
-        unselectedColor = MiuixTheme.colorScheme.onSurfaceContainer,
-        disabledSelectedColor = MiuixTheme.colorScheme.disabledPrimary,
-        disabledUnselectedColor = MiuixTheme.colorScheme.disabledOnSurface
-    )
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -462,22 +451,19 @@ private fun MethodCard(
             if (step == 1) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Column(modifier = Modifier.selectableGroup()) {
+                Column {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .selectable(
-                                selected = selectedMethod == InstallMethod.PATCH,
-                                onClick = { onMethodChange(InstallMethod.PATCH) },
-                                role = Role.RadioButton
-                            )
+                            .clickable(onClick = { onMethodChange(InstallMethod.PATCH) })
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(
-                            selected = selectedMethod == InstallMethod.PATCH,
-                            onClick = null,
-                            colors = methodRadioColors
+                        Checkbox(
+                            checked = selectedMethod == InstallMethod.PATCH,
+                            onCheckedChange = {
+                                if (it) onMethodChange(InstallMethod.PATCH)
+                            }
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -490,18 +476,15 @@ private fun MethodCard(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .selectable(
-                                    selected = selectedMethod == InstallMethod.DIRECT,
-                                    onClick = { onMethodChange(InstallMethod.DIRECT) },
-                                    role = Role.RadioButton
-                                )
+                                .clickable(onClick = { onMethodChange(InstallMethod.DIRECT) })
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = selectedMethod == InstallMethod.DIRECT,
-                                onClick = null,
-                                colors = methodRadioColors
+                            Checkbox(
+                                checked = selectedMethod == InstallMethod.DIRECT,
+                                onCheckedChange = {
+                                    if (it) onMethodChange(InstallMethod.DIRECT)
+                                }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
@@ -515,18 +498,15 @@ private fun MethodCard(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .selectable(
-                                    selected = selectedMethod == InstallMethod.INACTIVE_SLOT,
-                                    onClick = { onMethodChange(InstallMethod.INACTIVE_SLOT) },
-                                    role = Role.RadioButton
-                                )
+                                .clickable(onClick = { onMethodChange(InstallMethod.INACTIVE_SLOT) })
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = selectedMethod == InstallMethod.INACTIVE_SLOT,
-                                onClick = null,
-                                colors = methodRadioColors
+                            Checkbox(
+                                checked = selectedMethod == InstallMethod.INACTIVE_SLOT,
+                                onCheckedChange = {
+                                    if (it) onMethodChange(InstallMethod.INACTIVE_SLOT)
+                                }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
