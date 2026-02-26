@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.text.Spanned
 import android.text.SpannedString
-import android.widget.Toast
 import androidx.databinding.Bindable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -18,12 +17,9 @@ import com.topjohnwu.magisk.core.BuildConfig.APP_VERSION_CODE
 import com.topjohnwu.magisk.core.Const
 import com.topjohnwu.magisk.core.Config
 import com.topjohnwu.magisk.core.Info
-import com.topjohnwu.magisk.core.base.ContentResultCallback
-import com.topjohnwu.magisk.core.ktx.toast
 import com.topjohnwu.magisk.core.repository.NetworkService
 import com.topjohnwu.magisk.databinding.set
 import com.topjohnwu.magisk.dialog.SecondSlotWarningDialog
-import com.topjohnwu.magisk.events.GetContentEvent
 import com.topjohnwu.magisk.ui.flash.FlashFragment
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
@@ -52,9 +48,6 @@ class InstallViewModel(svc: NetworkService, markwon: Markwon) : BaseViewModel() 
         get() = methodId
         set(value) = set(value, methodId, { methodId = it }, BR.method) {
             when (it) {
-                R.id.method_patch -> {
-                    GetContentEvent("*/*", UriCallback()).publish()
-                }
                 R.id.method_inactive_slot -> {
                     SecondSlotWarningDialog().show()
                 }
@@ -62,6 +55,10 @@ class InstallViewModel(svc: NetworkService, markwon: Markwon) : BaseViewModel() 
         }
 
     val data: LiveData<Uri?> get() = uri
+
+    fun setPatchFile(localUri: Uri) {
+        uri.value = localUri
+    }
 
     @get:Bindable
     var notes: Spanned = SpannedString("")
@@ -141,17 +138,6 @@ class InstallViewModel(svc: NetworkService, markwon: Markwon) : BaseViewModel() 
             Config.keepVerity = it.keepVerity
             Config.keepEnc = it.keepEnc
             Config.recovery = it.recovery
-        }
-    }
-
-    @Parcelize
-    class UriCallback : ContentResultCallback {
-        override fun onActivityLaunch() {
-            AppContext.toast(CoreR.string.patch_file_msg, Toast.LENGTH_LONG)
-        }
-
-        override fun onActivityResult(result: Uri) {
-            uri.value = result
         }
     }
 

@@ -1,6 +1,10 @@
 package com.topjohnwu.magisk.ui.install
 
 import android.net.Uri
+import android.provider.OpenableColumns
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,13 +15,18 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.net.toUri
+import androidx.lifecycle.Observer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +48,11 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
 
 /**
  * 安装方法枚举
@@ -62,6 +76,7 @@ fun InstallScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val step = viewModel.step
     val method = viewModel.method
@@ -86,6 +101,71 @@ fun InstallScreen(
                 else -> null
             }
         )
+    }
+
+    // 观察 viewModel.data (uri) 的变化
+    var dataUri by remember { mutableStateOf(viewModel.data.value) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(viewModel) {
+        val observer = Observer<Uri?> {
+            dataUri = it
+        }
+        viewModel.data.observe(lifecycleOwner, observer)
+        onDispose {
+            viewModel.data.removeObserver(observer)
+        }
+    }
+
+    // 文件选择器 - 使用 OpenDocument 并立即复制到缓存
+    val patchFilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val result = runCatching {
+                    withContext(Dispatchers.IO) {
+                        // 获取原始文件名
+                        val originalName = context.contentResolver.query(
+                            it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                cursor.getString(
+                                    cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
+                                )
+                            } else null
+                        } ?: "boot.img"
+
+                        // 创建缓存目录
+                        val cacheDir = File(context.cacheDir, "patch_boot").apply {
+                            deleteRecursively()
+                            mkdirs()
+                        }
+
+                        // 复制文件到缓存
+                        val target = File(cacheDir, originalName)
+                        val input = context.contentResolver.openInputStream(it)
+                            ?: throw IOException("Cannot read selected file")
+                        input.use { source ->
+                            target.outputStream().use { sink ->
+                                source.copyTo(sink)
+                            }
+                        }
+                        target.toUri()
+                    }
+                }
+                result
+                    .onSuccess { localUri ->
+                        viewModel.setPatchFile(localUri)
+                    }
+                    .onFailure { error ->
+                        Toast.makeText(
+                            context,
+                            error.message ?: context.getString(CoreR.string.failure),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+            }
+        }
     }
 
     Scaffold(
@@ -149,7 +229,7 @@ fun InstallScreen(
                     selectedMethod = selectedMethod,
                     isRooted = isRooted,
                     noSecondSlot = noSecondSlot,
-                    dataUri = viewModel.data.value,
+                    dataUri = dataUri,
                     onMethodChange = { newMethod ->
                         selectedMethod = newMethod
                         viewModel.method = when (newMethod) {
@@ -157,6 +237,10 @@ fun InstallScreen(
                             InstallMethod.DIRECT -> R.id.method_direct
                             InstallMethod.INACTIVE_SLOT -> R.id.method_inactive_slot
                             null -> -1
+                        }
+                        // 如果选择了修补文件方法，立即触发文件选择器
+                        if (newMethod == InstallMethod.PATCH) {
+                            patchFilePicker.launch(arrayOf("*/*"))
                         }
                     },
                     onInstallClick = {

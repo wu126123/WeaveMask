@@ -85,7 +85,7 @@ fun FlashScreen(
 
     BackHandler(enabled = isFlashing) {}
 
-    LaunchedEffect(action, additionalData) {
+    LaunchedEffect(Unit) {
         viewModel.prepareForCompose(action = action, uri = additionalData)
         viewModel.startFlashing()
     }

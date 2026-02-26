@@ -42,6 +42,7 @@ class FlashViewModel : BaseViewModel() {
     private val _state = MutableLiveData(State.FLASHING)
     val state: LiveData<State> get() = _state
     val flashing = state.map { it == State.FLASHING }
+    private var isInitialized = false
 
     @get:Bindable
     var showReboot = Info.isRooted
@@ -51,6 +52,9 @@ class FlashViewModel : BaseViewModel() {
     lateinit var args: FlashFragmentArgs
     private val _consoleLines = MutableStateFlow<List<String>>(emptyList())
     val consoleLines: StateFlow<List<String>> = _consoleLines.asStateFlow()
+
+    private val console: MutableList<String>
+        get() = logItems
 
     private val logItems = mutableListOf<String>().synchronized()
     private val outItems = object : CallbackList<String>() {
@@ -65,6 +69,9 @@ class FlashViewModel : BaseViewModel() {
     }
 
     fun prepareForCompose(action: String, uri: android.net.Uri?) {
+        if (isInitialized) return
+        isInitialized = true
+
         args = FlashFragmentArgs(action = action, additionalData = uri)
         _state.value = State.FLASHING
         showReboot = Info.isRooted
@@ -79,36 +86,50 @@ class FlashViewModel : BaseViewModel() {
         val (action, uri) = args
 
         viewModelScope.launch {
-            val result = when (action) {
-                Const.Value.FLASH_ZIP -> {
-                    uri ?: return@launch
-                    FlashZip(uri, outItems, logItems).exec()
+            try {
+                val result = when (action) {
+                    Const.Value.FLASH_ZIP -> {
+                        if (uri == null) {
+                            console.add("Error: No file selected")
+                            false
+                        } else {
+                            FlashZip(uri, outItems, logItems).exec()
+                        }
+                    }
+                    Const.Value.UNINSTALL -> {
+                        showReboot = false
+                        MagiskInstaller.Uninstall(outItems, logItems).exec()
+                    }
+                    Const.Value.FLASH_MAGISK -> {
+                        if (Info.isEmulator)
+                            MagiskInstaller.Emulator(outItems, logItems).exec()
+                        else
+                            MagiskInstaller.Direct(outItems, logItems).exec()
+                    }
+                    Const.Value.FLASH_INACTIVE_SLOT -> {
+                        showReboot = false
+                        MagiskInstaller.SecondSlot(outItems, logItems).exec()
+                    }
+                    Const.Value.PATCH_FILE -> {
+                        if (uri == null) {
+                            console.add("Error: No file selected")
+                            false
+                        } else {
+                            showReboot = false
+                            MagiskInstaller.Patch(uri, outItems, logItems).exec()
+                        }
+                    }
+                    else -> {
+                        console.add("Error: Unknown action: $action")
+                        false
+                    }
                 }
-                Const.Value.UNINSTALL -> {
-                    showReboot = false
-                    MagiskInstaller.Uninstall(outItems, logItems).exec()
-                }
-                Const.Value.FLASH_MAGISK -> {
-                    if (Info.isEmulator)
-                        MagiskInstaller.Emulator(outItems, logItems).exec()
-                    else
-                        MagiskInstaller.Direct(outItems, logItems).exec()
-                }
-                Const.Value.FLASH_INACTIVE_SLOT -> {
-                    showReboot = false
-                    MagiskInstaller.SecondSlot(outItems, logItems).exec()
-                }
-                Const.Value.PATCH_FILE -> {
-                    uri ?: return@launch
-                    showReboot = false
-                    MagiskInstaller.Patch(uri, outItems, logItems).exec()
-                }
-                else -> {
-                    back()
-                    return@launch
-                }
+                onResult(result)
+            } catch (e: Exception) {
+                console.add("Error: ${e.message}")
+                e.printStackTrace()
+                onResult(false)
             }
-            onResult(result)
         }
     }
 
