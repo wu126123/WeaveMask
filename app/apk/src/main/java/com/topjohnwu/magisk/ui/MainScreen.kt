@@ -1,19 +1,34 @@
 package com.topjohnwu.magisk.ui
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.captionBar
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -25,13 +40,19 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -74,9 +95,8 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.icon.extended.Folder
@@ -176,10 +196,15 @@ class MainPagerState(
 
         navJob = coroutineScope.launch {
             val myJob = coroutineContext.job
+            val layoutInfo = pagerState.layoutInfo
+            val pageSize = layoutInfo.pageSize + layoutInfo.pageSpacing
+            val currentDistanceInPages =
+                targetIndex - pagerState.currentPage - pagerState.currentPageOffsetFraction
+            val scrollPixels = currentDistanceInPages * pageSize
             try {
-                pagerState.animateScrollToPage(
-                    page = targetIndex,
-                    animationSpec = tween<Float>(easing = EaseInOut, durationMillis = duration)
+                pagerState.animateScrollBy(
+                    value = scrollPixels,
+                    animationSpec = tween(easing = EaseInOut, durationMillis = duration)
                 )
             } finally {
                 if (navJob == myJob) {
@@ -403,6 +428,9 @@ private fun MainTabScreen(
         pageCount = { 4 }
     )
     val mainPagerState = rememberMainPagerState(pagerState)
+    BackHandler(enabled = mainPagerState.selectedPage != 0) {
+        mainPagerState.animateToPage(0)
+    }
 
     // 手势滑动 Pager 后同步选中态到底部栏
     LaunchedEffect(mainPagerState.pagerState.currentPage) {
@@ -429,29 +457,26 @@ private fun MainTabScreen(
                     thickness = 0.6.dp,
                     color = MiuixTheme.colorScheme.dividerLine.copy(0.8f)
                 )
-                NavigationBar(
+                MainBottomBar(
                     color = Color.Transparent,
-                    showDivider = false
-                ) {
-                    bottomNavItems.forEachIndexed { index, item ->
-                        val isEnabled = when (index) {
+                    items = bottomNavItems.map { item ->
+                        BottomNavItem(
+                            labelResId = item.labelResId,
+                            icon = item.icon
+                        )
+                    },
+                    selected = mainPagerState.selectedPage,
+                    isEnabled = { index ->
+                        when (index) {
                             1 -> isSuperuserEnabled
                             2 -> isModuleEnabled
                             else -> true
                         }
-                        NavigationBarItem(
-                            selected = mainPagerState.selectedPage == index,
-                            onClick = {
-                                if (isEnabled) {
-                                    mainPagerState.animateToPage(index)
-                                }
-                            },
-                            icon = item.icon,
-                            label = context.getString(item.labelResId),
-                            enabled = isEnabled
-                        )
+                    },
+                    onClick = { index ->
+                        mainPagerState.animateToPage(index)
                     }
-                }
+                )
             }
         },
         contentWindowInsets = WindowInsets(0)
@@ -462,7 +487,7 @@ private fun MainTabScreen(
         HorizontalPager(
             state = pagerState,
             beyondViewportPageCount = 3, // 预渲染所有 4 页，切换零延迟
-            userScrollEnabled = false, // 仅通过底部导航栏切换
+            userScrollEnabled = true, // 支持手势滑动与底部导航栏切换
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
@@ -511,6 +536,107 @@ private fun MainTabScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MainBottomBar(
+    items: List<BottomNavItem>,
+    selected: Int,
+    isEnabled: (Int) -> Boolean,
+    onClick: (Int) -> Unit,
+    color: Color = MiuixTheme.colorScheme.surface,
+) {
+    require(items.size in 2..5) { "BottomBar must have between 2 and 5 items" }
+    val currentOnClick by rememberUpdatedState(onClick)
+    val context = LocalContext.current
+
+    val captionBarPaddings = WindowInsets.captionBar.only(WindowInsetsSides.Bottom).asPaddingValues()
+    val captionBarBottomPaddingValue = captionBarPaddings.calculateBottomPadding()
+    val animatedCaptionBarHeight by animateDpAsState(
+        targetValue = if (captionBarBottomPaddingValue > 0.dp) captionBarBottomPaddingValue else 0.dp,
+        animationSpec = tween(durationMillis = 300),
+        label = "captionBarHeight"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val itemHeight = 64.dp
+            val itemWeight = 1f / items.size
+
+            items.forEachIndexed { index, item ->
+                val enabled = isEnabled(index)
+                val isSelected = selected == index
+                var isPressed by remember { mutableStateOf(false) }
+                val onSurfaceContainerColor = MiuixTheme.colorScheme.onSurfaceContainer
+                val onSurfaceContainerVariantColor = MiuixTheme.colorScheme.onSurfaceContainerVariant
+
+                val activeColor = if (enabled) onSurfaceContainerColor else onSurfaceContainerColor.copy(alpha = 0.32f)
+                val inactiveColor = if (enabled) onSurfaceContainerVariantColor else onSurfaceContainerVariantColor.copy(alpha = 0.32f)
+                val tint = when {
+                    isPressed -> if (isSelected) activeColor.copy(alpha = 0.5f) else inactiveColor.copy(alpha = 0.5f)
+                    isSelected -> activeColor
+                    else -> inactiveColor
+                }
+                val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+
+                val pressModifier = if (enabled) {
+                    Modifier.pointerInput(index) {
+                        detectTapGestures(
+                            onPress = {
+                                isPressed = true
+                                tryAwaitRelease()
+                                isPressed = false
+                            },
+                            onTap = { currentOnClick(index) },
+                        )
+                    }
+                } else {
+                    Modifier
+                }
+
+                Column(
+                    modifier = Modifier
+                        .height(itemHeight)
+                        .weight(itemWeight)
+                        .then(pressModifier),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .size(26.dp),
+                        imageVector = item.icon,
+                        contentDescription = context.getString(item.labelResId),
+                        colorFilter = ColorFilter.tint(tint),
+                    )
+                    Text(
+                        modifier = Modifier.padding(top = 1.dp, bottom = 8.dp),
+                        text = context.getString(item.labelResId),
+                        color = tint,
+                        textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
+                        fontWeight = fontWeight,
+                    )
+                }
+            }
+        }
+        val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues()
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(navigationBarsPadding.calculateBottomPadding() + animatedCaptionBarHeight)
+                .pointerInput(Unit) { detectTapGestures { } }
+        )
     }
 }
 
