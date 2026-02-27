@@ -62,6 +62,9 @@ import top.yukonga.miuix.kmp.extra.SuperListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.icon.extended.MoreCircle
+import top.yukonga.miuix.kmp.icon.extended.UploadCloud
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Undo
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -428,7 +431,8 @@ private fun ModuleItem(
 ) {
     val context = LocalContext.current
 
-    val isSwitchEnabled = !module.removed && !module.showNotice
+    // 当模块被移除、显示警告或待重启时，禁用开关
+    val isSwitchEnabled = !module.removed && !module.showNotice && !module.updated
     val hasDescription = module.description.isNotEmpty()
     var expanded by rememberSaveable(module.id) { mutableStateOf(false) }
 
@@ -534,19 +538,80 @@ private fun ModuleItem(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            // 更新按钮 - 图标+文字样式
             if (module.showUpdate) {
-                TextButton(
-                    text = context.getString(CoreR.string.update),
+                val updateBg = MiuixTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                val updateTint = MiuixTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                IconButton(
+                    modifier = Modifier.padding(end = 8.dp),
+                    backgroundColor = updateBg,
+                    enabled = module.updateReady,
+                    minHeight = 32.dp,
+                    minWidth = 32.dp,
                     onClick = { viewModel.downloadPressed(module.updateInfo) },
-                    enabled = module.updateReady
-                )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = MiuixIcons.UploadCloud,
+                            tint = updateTint,
+                            contentDescription = context.getString(CoreR.string.update),
+                        )
+                        Text(
+                            text = context.getString(CoreR.string.update),
+                            color = updateTint,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
 
-            TextButton(
-                text = if (module.removed) context.getString(CoreR.string.module_state_restore) else context.getString(CoreR.string.module_state_remove),
+            // 移除/恢复按钮 - 图标+文字样式
+            val secondaryContainer = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+            val actionIconTint = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+            IconButton(
+                minHeight = 32.dp,
+                minWidth = 32.dp,
                 onClick = { viewModel.toggleModuleRemove(module.id) },
-                enabled = !module.updated
-            )
+                enabled = !module.updated,
+                backgroundColor = if (module.removed) {
+                    secondaryContainer.copy(alpha = 0.8f)
+                } else {
+                    secondaryContainer
+                },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        modifier = Modifier.size(18.dp),
+                        imageVector = if (module.removed) {
+                            MiuixIcons.Undo
+                        } else {
+                            MiuixIcons.Delete
+                        },
+                        tint = actionIconTint,
+                        contentDescription = null
+                    )
+                    Text(
+                        text = if (module.removed) {
+                            context.getString(CoreR.string.module_state_restore)
+                        } else {
+                            context.getString(CoreR.string.module_state_remove)
+                        },
+                        color = actionIconTint,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    )
+                }
+            }
         }
     }
 }

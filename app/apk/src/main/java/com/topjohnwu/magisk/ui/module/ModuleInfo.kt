@@ -28,6 +28,7 @@ data class ModuleInfo(
     val isRiru: Boolean,
     val zygiskUnloaded: Boolean,
     val hasAction: Boolean,
+    val outdated: Boolean,
 ) {
     /**
      * 是否显示警告信息
@@ -55,21 +56,16 @@ data class ModuleInfo(
 
     /**
      * 是否显示更新按钮
+     * 只有当有可用更新(outdated)且获取到了更新信息时才显示
      */
     val showUpdate: Boolean
-        get() = updateInfo != null
+        get() = outdated && updateInfo != null
 
     /**
      * 更新按钮是否可用
      */
     val updateReady: Boolean
         get() = updateInfo != null && !removed && enabled
-
-    /**
-     * 是否有可用更新
-     */
-    val outdated: Boolean
-        get() = updateInfo != null
 
     companion object {
         /**
@@ -91,6 +87,7 @@ data class ModuleInfo(
                 isRiru = localModule.isRiru,
                 zygiskUnloaded = localModule.zygiskUnloaded,
                 hasAction = localModule.hasAction,
+                outdated = localModule.outdated,
             )
         }
     }
