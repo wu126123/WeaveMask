@@ -1,11 +1,8 @@
 package com.topjohnwu.magisk.ui.surequest
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.res.Resources
 import android.graphics.drawable.Drawable
-import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.MotionEvent
 import android.view.View
@@ -14,10 +11,11 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeProvider
 import android.widget.Toast
-import androidx.databinding.Bindable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.topjohnwu.magisk.BR
-import com.topjohnwu.magisk.arch.BaseViewModel
 import com.topjohnwu.magisk.core.AppContext
 import com.topjohnwu.magisk.core.Config
 import com.topjohnwu.magisk.core.R
@@ -27,38 +25,98 @@ import com.topjohnwu.magisk.core.ktx.toast
 import com.topjohnwu.magisk.core.model.su.SuPolicy.Companion.ALLOW
 import com.topjohnwu.magisk.core.model.su.SuPolicy.Companion.DENY
 import com.topjohnwu.magisk.core.su.SuRequestHandler
-import com.topjohnwu.magisk.databinding.set
+import com.topjohnwu.magisk.dialog.SuRequestDialog
 import com.topjohnwu.magisk.events.AuthEvent
 import com.topjohnwu.magisk.events.DieEvent
-import com.topjohnwu.magisk.events.ShowUIEvent
-import com.topjohnwu.magisk.utils.TextHolder
+import com.topjohnwu.magisk.arch.BaseViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit.SECONDS
+import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 
+/**
+ * 超级用户请求 ViewModel
+ * 管理 su 请求弹窗的状态和业务逻辑
+ *
+ * @param policyDB 权限策略数据库访问对象
+ * @param timeoutPrefs 超时时间 SharedPreferences
+ */
 class SuRequestViewModel(
     policyDB: PolicyDao,
     private val timeoutPrefs: SharedPreferences
 ) : BaseViewModel() {
 
+    /**
+     * ViewModel 工厂类
+     * 用于创建带参数的 ViewModel 实例
+     */
+    class Factory(
+        private val policyDB: PolicyDao,
+        private val timeoutPrefs: SharedPreferences
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(SuRequestViewModel::class.java)) {
+                return SuRequestViewModel(policyDB, timeoutPrefs) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
+    /**
+     * 弹窗状态流
+     * 使用 StateFlow 替代 DataBinding 实现状态驱动
+     */
+    private val _dialogState = MutableStateFlow(SuRequestDialog.DialogState())
+    val dialogState: StateFlow<SuRequestDialog.DialogState> = _dialogState.asStateFlow()
+
+    /**
+     * 应用图标
+     */
     lateinit var icon: Drawable
+        private set
+
+    /**
+     * 应用标题（名称）
+     */
     lateinit var title: String
+        private set
+
+    /**
+     * 包名
+     */
     lateinit var packageName: String
+        private set
 
-    @get:Bindable
-    val denyText = DenyText()
+    /**
+     * 请求处理器
+     */
+    private val handler = SuRequestHandler(AppContext.packageManager, policyDB)
 
-    @get:Bindable
-    var selectedItemPosition = 0
-        set(value) = set(value, field, { field = it }, BR.selectedItemPosition)
+    /**
+     * 倒计时总毫秒数
+     */
+    private val millis = TimeUnit.SECONDS.toMillis(Config.suDefaultTimeout.toLong())
 
-    @get:Bindable
-    var grantEnabled = false
-        set(value) = set(value, field, { field = it }, BR.grantEnabled)
+    /**
+     * 倒计时器
+     */
+    private var timer: CountDownTimer? = null
 
-    @SuppressLint("ClickableViewAccessibility")
+    /**
+     * 是否已初始化完成
+     */
+    private var initialized = false
+
+    /**
+     * 点击劫持防护触摸监听器
+     * 检测窗口是否被其他应用覆盖
+     */
     val grantTouchListener = View.OnTouchListener { _: View, event: MotionEvent ->
-        // Filter obscured touches by consuming them.
+        // 过滤被覆盖的触摸事件
         if (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED != 0
             || event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED != 0) {
             if (event.action == MotionEvent.ACTION_UP) {
@@ -69,11 +127,10 @@ class SuRequestViewModel(
         false
     }
 
-    private val handler = SuRequestHandler(AppContext.packageManager, policyDB)
-    private val millis = SECONDS.toMillis(Config.suDefaultTimeout.toLong())
-    private var timer = SuTimer(millis, 1000)
-    private var initialized = false
-
+    /**
+     * 允许按钮点击处理
+     * 触发生物识别认证（如启用）或直接响应允许
+     */
     fun grantPressed() {
         cancelTimer()
         if (Config.suAuth) {
@@ -83,116 +140,182 @@ class SuRequestViewModel(
         }
     }
 
+    /**
+     * 拒绝按钮点击处理
+     */
     fun denyPressed() {
         respond(DENY)
     }
 
+    /**
+     * 超时选择器触摸处理
+     * 取消倒计时防止自动拒绝
+     */
     fun spinnerTouched(): Boolean {
         cancelTimer()
         return false
     }
 
+    /**
+     * 超时选择变化处理
+     *
+     * @param index 选中的超时选项索引
+     */
+    fun onTimeoutSelected(index: Int) {
+        _dialogState.value = _dialogState.value.copy(selectedTimeoutIndex = index)
+    }
+
+    /**
+     * 处理 su 请求
+     * 在后台线程初始化请求，需要用户交互时显示弹窗
+     *
+     * @param intent 包含请求参数的 Intent
+     */
     fun handleRequest(intent: Intent) {
         viewModelScope.launch(Dispatchers.Default) {
-            if (handler.start(intent))
-                showDialog()
-            else
+            if (handler.start(intent)) {
+                withContext(Dispatchers.Main) {
+                    showDialog()
+                }
+            } else {
                 DieEvent().publish()
+            }
         }
     }
 
-    private fun showDialog() {
+    /**
+     * 显示弹窗并初始化 UI 数据
+     */
+    private suspend fun showDialog() {
         val pm = handler.pm
         val info = handler.pkgInfo
         val app = info.applicationInfo
 
+        // 在后台线程加载应用信息
+        val appIcon: Drawable
+        val appName: String
+        val pkgName: String
+        val isSharedUid: Boolean
+
         if (app == null) {
-            // The request is not coming from an app process, and the UID is a
-            // shared UID. We have no way to know where this request comes from.
-            icon = pm.defaultActivityIcon
-            title = "[SharedUID] ${info.sharedUserId}"
-            packageName = info.sharedUserId.toString()
+            // 请求不是来自应用进程，且 UID 是共享 UID
+            // 无法确定请求来源
+            appIcon = pm.defaultActivityIcon
+            appName = "[SharedUID] ${info.sharedUserId}"
+            pkgName = info.sharedUserId.toString()
+            isSharedUid = true
         } else {
             val prefix = if (info.sharedUserId == null) "" else "[SharedUID] "
-            icon = app.loadIcon(pm)
-            title = "$prefix${app.getLabel(pm)}"
-            packageName = info.packageName
+            appIcon = app.loadIcon(pm)
+            appName = "$prefix${app.getLabel(pm)}"
+            pkgName = info.packageName
+            isSharedUid = info.sharedUserId != null
         }
 
-        selectedItemPosition = timeoutPrefs.getInt(packageName, 0)
+        val savedIndex = timeoutPrefs.getInt(pkgName, 0)
 
-        // Set timer
-        timer.start()
+        // 保存到成员变量
+        icon = appIcon
+        title = appName
+        packageName = pkgName
 
-        // Actually show the UI
-        ShowUIEvent(if (Config.suTapjack) EmptyAccessibilityDelegate else null).publish()
-        initialized = true
+        // 在主线程更新状态
+        withContext(Dispatchers.Main) {
+            _dialogState.value = SuRequestDialog.DialogState(
+                visible = true,
+                appIcon = appIcon,
+                appName = appName,
+                packageName = pkgName,
+                isSharedUid = isSharedUid,
+                selectedTimeoutIndex = savedIndex,
+                grantEnabled = false,
+                remainingSeconds = (millis / 1000).toInt()
+            )
+
+            // 启动倒计时
+            startTimer()
+
+            initialized = true
+        }
     }
 
+    /**
+     * 响应请求
+     * 将用户选择写入 FIFO 管道并更新数据库
+     *
+     * @param action 响应动作（ALLOW 或 DENY）
+     */
     private fun respond(action: Int) {
         if (!initialized) {
-            // ignore the response until showDialog done
+            // 忽略弹窗完成前的响应
             return
         }
 
-        timer.cancel()
+        cancelTimer()
 
-        val pos = selectedItemPosition
+        val pos = _dialogState.value.selectedTimeoutIndex
         timeoutPrefs.edit().putInt(packageName, pos).apply()
 
         viewModelScope.launch {
             handler.respond(action, Config.Value.TIMEOUT_LIST[pos])
-            // Kill activity after response
+            // 响应后结束 Activity
             DieEvent().publish()
         }
     }
 
-    private fun cancelTimer() {
-        timer.cancel()
-        denyText.seconds = 0
-    }
+    /**
+     * 启动倒计时器
+     * 默认 10 秒后自动拒绝
+     */
+    private fun startTimer() {
+        timer = object : CountDownTimer(millis, 1000) {
+            override fun onTick(remains: Long) {
+                val remainingSecs = (remains / 1000).toInt() + 1
+                val shouldEnableGrant = remains <= millis - 1000
 
-    private inner class SuTimer(
-        private val millis: Long,
-        interval: Long
-    ) : CountDownTimer(millis, interval) {
-
-        override fun onTick(remains: Long) {
-            if (!grantEnabled && remains <= millis - 1000) {
-                grantEnabled = true
+                _dialogState.value = _dialogState.value.copy(
+                    remainingSeconds = remainingSecs,
+                    grantEnabled = shouldEnableGrant || _dialogState.value.grantEnabled
+                )
             }
-            denyText.seconds = (remains / 1000).toInt() + 1
-        }
 
-        override fun onFinish() {
-            denyText.seconds = 0
-            respond(DENY)
-        }
-
+            override fun onFinish() {
+                _dialogState.value = _dialogState.value.copy(remainingSeconds = 0)
+                respond(DENY)
+            }
+        }.start()
     }
 
-    inner class DenyText : TextHolder() {
-        var seconds = 0
-            set(value) = set(value, field, { field = it }, BR.denyText)
-
-        override fun getText(resources: Resources): CharSequence {
-            return if (seconds != 0)
-                "${resources.getString(R.string.deny)} ($seconds)"
-            else
-                resources.getString(R.string.deny)
-        }
+    /**
+     * 取消倒计时
+     */
+    private fun cancelTimer() {
+        timer?.cancel()
+        timer = null
     }
 
-    // Invisible for accessibility services
+    /**
+     * 生命周期清理
+     * Activity 销毁时取消倒计时
+     */
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
+        cancelTimer()
+    }
+
+    /**
+     * 无障碍服务空委托
+     * 对辅助服务隐藏 UI 内容，防止恶意辅助服务点击
+     */
     object EmptyAccessibilityDelegate : View.AccessibilityDelegate() {
         override fun sendAccessibilityEvent(host: View, eventType: Int) {}
-        override fun performAccessibilityAction(host: View, action: Int, args: Bundle?) = true
+        override fun performAccessibilityAction(host: View, action: Int, args: android.os.Bundle?) = true
         override fun sendAccessibilityEventUnchecked(host: View, event: AccessibilityEvent) {}
         override fun dispatchPopulateAccessibilityEvent(host: View, event: AccessibilityEvent) = true
         override fun onPopulateAccessibilityEvent(host: View, event: AccessibilityEvent) {}
         override fun onInitializeAccessibilityEvent(host: View, event: AccessibilityEvent) {}
         override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {}
-        override fun addExtraDataToAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo, extraDataKey: String, arguments: Bundle?) {}
+        override fun addExtraDataToAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo, extraDataKey: String, arguments: android.os.Bundle?) {}
         override fun onRequestSendAccessibilityEvent(host: ViewGroup, child: View, event: AccessibilityEvent): Boolean = false
         override fun getAccessibilityNodeProvider(host: View): AccessibilityNodeProvider? = null
     }

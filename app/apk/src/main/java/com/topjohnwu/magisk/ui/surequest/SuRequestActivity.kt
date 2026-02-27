@@ -2,41 +2,124 @@ package com.topjohnwu.magisk.ui.surequest
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.Window
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
-import com.topjohnwu.magisk.R
-import com.topjohnwu.magisk.arch.UIActivity
-import com.topjohnwu.magisk.arch.viewModel
+import com.topjohnwu.magisk.core.AppContext
+import com.topjohnwu.magisk.core.Config
+import com.topjohnwu.magisk.core.R
 import com.topjohnwu.magisk.core.base.UntrackedActivity
+import com.topjohnwu.magisk.core.di.ServiceLocator
 import com.topjohnwu.magisk.core.su.SuCallbackHandler
 import com.topjohnwu.magisk.core.su.SuCallbackHandler.REQUEST
-import com.topjohnwu.magisk.databinding.ActivityRequestBinding
-import com.topjohnwu.magisk.ui.theme.Theme
+import com.topjohnwu.magisk.dialog.SuRequestDialog
+import com.topjohnwu.magisk.events.DieEvent
+import com.topjohnwu.magisk.ui.theme.WeaveMagiskTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-open class SuRequestActivity : UIActivity<ActivityRequestBinding>(), UntrackedActivity {
+/**
+ * 超级用户请求 Activity
+ * 使用 Compose + Miuix SuperDialog 实现 su 请求弹窗
+ *
+ * 安全特性：
+ * 1. 点击劫持防护 - 在 dispatchTouchEvent 中检测 FLAG_WINDOW_IS_OBSCURED
+ * 2. 无障碍服务防护 - 使用 EmptyAccessibilityDelegate 对辅助服务隐藏 UI
+ * 3. 生物识别认证 - 支持 suAuth 配置
+ * 4. 倒计时自动拒绝 - 默认 10 秒超时
+ */
+class SuRequestActivity : ComponentActivity(), UntrackedActivity {
 
-    override val layoutRes: Int = R.layout.activity_request
-    override val viewModel: SuRequestViewModel by viewModel()
+    /**
+     * ViewModel 实例
+     */
+    private val viewModel: SuRequestViewModel by viewModels {
+        SuRequestViewModel.Factory(
+            ServiceLocator.policyDB,
+            AppContext.getSharedPreferences("su_request", MODE_PRIVATE)
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
+        // 配置窗口特性
+        configureWindow()
+
+        super.onCreate(savedInstanceState)
+
+        // 设置无障碍服务委托（点击劫持防护启用时）
+        if (Config.suTapjack) {
+            window.decorView.accessibilityDelegate = SuRequestViewModel.EmptyAccessibilityDelegate
+        }
+
+        // 设置 Compose 内容
+        setContent {
+            WeaveMagiskTheme {
+                val dialogState by viewModel.dialogState.collectAsState()
+
+                SuRequestDialog(
+                    state = dialogState,
+                    timeoutOptions = resources.getStringArray(R.array.allow_timeout),
+                    onTimeoutSelected = viewModel::onTimeoutSelected,
+                    onGrant = viewModel::grantPressed,
+                    onDeny = viewModel::denyPressed,
+                    onDismiss = viewModel::denyPressed
+                )
+            }
+        }
+
+        // 处理 Intent
+        handleIntent(intent)
+
+        // 监听 ViewModel 事件
+        observeViewModelEvents()
+
+        // 生命周期观察
+        lifecycle.addObserver(LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_DESTROY) {
+                viewModel.onDestroy()
+            }
+        })
+    }
+
+    /**
+     * 配置窗口特性
+     * - 无标题
+     * - 锁定屏幕方向
+     * - 保持屏幕常亮
+     * - 隐藏软键盘
+     * - Android 12+ 隐藏覆盖窗口
+     */
+    private fun configureWindow() {
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.addFlags(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        // 设置浮动窗口样式，让背后的应用可见
+        window.setBackgroundDrawableResource(android.R.color.transparent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             window.setHideOverlayWindows(true)
         }
-        setTheme(Theme.themeRes)
-        super.onCreate(savedInstanceState)
+    }
 
-        if (intent.action == Intent.ACTION_VIEW) {
+    /**
+     * 处理 Intent
+     * 根据 action 类型处理 su 请求或回调
+     *
+     * @param intent 传入的 Intent
+     */
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_VIEW) {
             val action = intent.getStringExtra("action")
             if (action == REQUEST) {
                 viewModel.handleRequest(intent)
@@ -45,25 +128,65 @@ open class SuRequestActivity : UIActivity<ActivityRequestBinding>(), UntrackedAc
                     withContext(Dispatchers.IO) {
                         SuCallbackHandler.run(this@SuRequestActivity, action, intent.extras)
                     }
-                    finish()
+                    finishAndRemoveTask()
                 }
             }
         } else {
-            finish()
+            finishAndRemoveTask()
         }
     }
 
-    override fun getTheme(): Resources.Theme {
-        val theme = super.getTheme()
-        theme.applyStyle(R.style.Foundation_Floating, true)
-        return theme
+    /**
+     * 观察 ViewModel 事件
+     * 处理 DieEvent 等 Activity 级别事件
+     */
+    private fun observeViewModelEvents() {
+        viewModel.viewEvents.observe(this) { event ->
+            when (event) {
+                is DieEvent -> finishAndRemoveTask()
+            }
+        }
     }
 
+    /**
+     * 触摸事件分发
+     * 实现点击劫持防护：检测窗口是否被其他应用覆盖
+     *
+     * @param event 触摸事件
+     * @return 是否消费事件
+     */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        // 点击劫持防护
+        if (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED != 0
+            || event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED != 0) {
+            if (Config.suTapjack) {
+                // 窗口被覆盖，消费事件并提示用户
+                if (event.action == MotionEvent.ACTION_UP) {
+                    android.widget.Toast.makeText(this, R.string.touch_filtered_warning, android.widget.Toast.LENGTH_SHORT).show()
+                }
+                return true
+            }
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
+    /**
+     * 返回键处理
+     * 触发拒绝操作
+     */
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         viewModel.denyPressed()
     }
 
-    override fun finish() {
-        super.finishAndRemoveTask()
+    /**
+     * 新 Intent 处理
+     * 用于处理新的 su 请求
+     *
+     * @param intent 新的 Intent
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
     }
 }

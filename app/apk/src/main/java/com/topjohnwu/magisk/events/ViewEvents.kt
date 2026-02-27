@@ -40,6 +40,10 @@ class DieEvent : ViewEvent(), ActivityExecutor {
     }
 }
 
+/**
+ * @deprecated SuRequestActivity 已迁移到 Compose，不再需要此事件
+ */
+@Deprecated("SuRequestActivity 已使用 Compose 实现，不再需要 ShowUIEvent")
 class ShowUIEvent(private val accessibilityDelegate: View.AccessibilityDelegate?)
     : ViewEvent(), ActivityExecutor {
     override fun invoke(activity: AppCompatActivity) {
