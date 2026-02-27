@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import android.os.Process
 import top.yukonga.miuix.kmp.basic.Text
@@ -27,11 +26,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.topjohnwu.magisk.core.model.su.SuPolicy
@@ -50,6 +52,7 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.PullToRefresh
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -86,6 +89,7 @@ fun SuperuserScreen(
     var expandedPolicyKeys by rememberSaveable { mutableStateOf(emptyList<String>()) }
     val showTopPopup = remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
+    val scrollBehavior = MiuixScrollBehavior()
     val hazeState = remember { HazeState() }
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.surface,
@@ -111,6 +115,7 @@ fun SuperuserScreen(
                     },
                     color = Color.Transparent,
                     title = context.getString(CoreR.string.superuser),
+                    scrollBehavior = scrollBehavior,
                     actions = {
                         SuperListPopup(
                             show = showTopPopup,
@@ -166,15 +171,11 @@ fun SuperuserScreen(
                                 label = "搜索应用"
                             )
                         },
+                        insideMargin = DpSize(12.dp, 12.dp),
                         onExpandedChange = { searchExpanded = it },
                         expanded = searchExpanded
                     ) {
                     }
-
-                    HorizontalDivider(
-                        color = MiuixTheme.colorScheme.surfaceContainerHigh,
-                        thickness = 1.dp
-                    )
 
                     when {
                         uiState.isLoading && uiState.policies.isEmpty() -> {
@@ -204,7 +205,8 @@ fun SuperuserScreen(
                                             } else {
                                                 expandedPolicyKeys + key
                                             }
-                                        }
+                                        },
+                                        nestedScrollConnection = scrollBehavior.nestedScrollConnection
                                     )
                                 }
                             }
@@ -264,6 +266,7 @@ private fun EmptyContent() {
  * @param policies 策略列表
  * @param viewModel 超级用户 ViewModel
  * @param bottomPadding 底部内边距
+ * @param nestedScrollConnection 嵌套滚动连接
  */
 @Composable
 private fun PolicyList(
@@ -271,12 +274,14 @@ private fun PolicyList(
     viewModel: SuperuserViewModel,
     bottomPadding: Dp,
     expandedPolicyKeys: List<String>,
-    onToggleExpanded: (String) -> Unit
+    onToggleExpanded: (String) -> Unit,
+    nestedScrollConnection: NestedScrollConnection
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .nestedScroll(nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
