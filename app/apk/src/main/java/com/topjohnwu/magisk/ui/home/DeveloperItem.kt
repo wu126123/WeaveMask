@@ -21,6 +21,10 @@ private interface YUImpl : Dev {
     override val name get() = "yujincheng08"
 }
 
+private interface SeyudImpl : Dev {
+    override val name get() = "Seyud"
+}
+
 private interface RikkaImpl : Dev {
     override val name get() = "RikkaW"
 }
@@ -56,6 +60,13 @@ sealed class DeveloperItem : Dev {
                 object : IconLink.Twitter() { override val name = "shanasaimoe" },
                 object : IconLink.Github.User(), YUImpl {},
                 object : IconLink.Sponsor(), YUImpl {}
+            )
+    }
+
+    object Seyud : DeveloperItem(), SeyudImpl {
+        override val items =
+            listOf<IconLink>(
+                object : IconLink.Github.User(), SeyudImpl {}
             )
     }
 

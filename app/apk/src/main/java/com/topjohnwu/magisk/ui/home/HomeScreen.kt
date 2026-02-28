@@ -798,6 +798,12 @@ private fun FollowCard(
             )
 
             DeveloperItem(
+                handle = DeveloperItem.Seyud.handle,
+                links = DeveloperItem.Seyud.items,
+                onLinkPressed = onLinkPressed
+            )
+
+            DeveloperItem(
                 handle = DeveloperItem.Rikka.handle,
                 links = DeveloperItem.Rikka.items,
                 onLinkPressed = onLinkPressed
