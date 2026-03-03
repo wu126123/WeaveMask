@@ -465,31 +465,13 @@ private fun PolicyItem(
                             fontWeight = FontWeight.Medium
                         )
                     } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isAllowed) {
-                                    context.getString(CoreR.string.grant)
-                                } else {
-                                    context.getString(CoreR.string.deny)
-                                },
-                                style = MiuixTheme.textStyles.body2,
-                                color = if (isAllowed) {
-                                    MiuixTheme.colorScheme.primary
-                                } else {
-                                    MiuixTheme.colorScheme.onSurfaceContainer
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = isAllowed,
-                                enabled = true,
-                                onCheckedChange = { checked ->
-                                    onUpdatePolicy(if (checked) SuPolicy.ALLOW else SuPolicy.DENY)
-                                }
-                            )
-                        }
+                        Switch(
+                            checked = isAllowed,
+                            enabled = true,
+                            onCheckedChange = { checked ->
+                                onUpdatePolicy(if (checked) SuPolicy.ALLOW else SuPolicy.DENY)
+                            }
+                        )
                     }
                 }
             }

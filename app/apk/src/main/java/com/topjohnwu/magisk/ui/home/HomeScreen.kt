@@ -356,21 +356,29 @@ private fun MagiskCard(
 
                 when (magiskState) {
                     HomeViewModel.State.OUTDATED -> {
-                        Button(
+                        Surface(
                             onClick = onPressed,
-                            colors = ButtonDefaults.buttonColorsPrimary()
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            color = Color.Transparent
                         ) {
-                            Icon(
-                                imageVector = MiuixIcons.Update,
-                                contentDescription = null,
-                                tint = MiuixTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = context.getString(CoreR.string.update),
-                                color = MiuixTheme.colorScheme.onPrimary
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Update,
+                                    contentDescription = null,
+                                    tint = MiuixTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = context.getString(CoreR.string.update),
+                                    color = MiuixTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                     HomeViewModel.State.LOADING -> {
@@ -380,18 +388,29 @@ private fun MagiskCard(
                         )
                     }
                     else -> {
-                        Button(onClick = onPressed) {
-                            Icon(
-                                imageVector = MiuixIcons.Download,
-                                contentDescription = null,
-                                tint = MiuixTheme.colorScheme.onSecondaryVariant,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = context.getString(CoreR.string.install),
-                                color = MiuixTheme.colorScheme.onSecondaryVariant
-                            )
+                        Surface(
+                            onClick = onPressed,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            color = Color.Transparent
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Download,
+                                    contentDescription = null,
+                                    tint = MiuixTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = context.getString(CoreR.string.install),
+                                    color = MiuixTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
