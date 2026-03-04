@@ -21,8 +21,9 @@ import com.topjohnwu.magisk.core.utils.ShellInit
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.internal.UiThreadHandler
 import com.topjohnwu.superuser.ipc.RootService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -36,6 +37,8 @@ object AppContext : ContextWrapper(null),
     Application.ActivityLifecycleCallbacks, ComponentCallbacks2 {
 
     val foregroundActivity: Activity? get() = ref.get()
+
+    val appScope = CoroutineScope(SupervisorJob())
 
     private var ref = WeakReference<Activity>(null)
     private lateinit var application: Application
@@ -108,7 +111,7 @@ object AppContext : ContextWrapper(null),
         }
         networkObserver = NetworkObserver.init(this)
         if (!BuildConfig.DEBUG && !isRunningAsStub) {
-            GlobalScope.launch(Dispatchers.IO) {
+            appScope.launch(Dispatchers.IO) {
                 ProfileInstaller.writeProfile(this@AppContext)
             }
         }
@@ -126,6 +129,7 @@ object AppContext : ContextWrapper(null),
     override fun onActivityStopped(activity: Activity) {}
     override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {}
+    @Deprecated("Deprecated in Java")
     override fun onLowMemory() {}
     override fun onTrimMemory(level: Int) {}
 }

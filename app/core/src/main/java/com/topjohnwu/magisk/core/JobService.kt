@@ -15,7 +15,6 @@ import com.topjohnwu.magisk.core.download.DownloadSession
 import com.topjohnwu.magisk.core.download.Subject
 import com.topjohnwu.magisk.view.Notifications
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -74,7 +73,7 @@ class JobService : BaseJobService() {
     }
 
     private fun checkUpdate(params: JobParameters): Boolean {
-        GlobalScope.launch(Dispatchers.IO) {
+        AppContext.appScope.launch(Dispatchers.IO) {
             Info.fetchUpdate(ServiceLocator.networkService)?.let {
                 if (Info.env.isActive && BuildConfig.APP_VERSION_CODE < it.versionCode)
                     Notifications.updateAvailable()
