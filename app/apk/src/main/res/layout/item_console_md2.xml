@@ -6,7 +6,7 @@
 
         <variable
             name="item"
-            type="com.topjohnwu.magisk.ui.flash.ConsoleItem" />
+            type="io.github.seyud.weave.ui.flash.ConsoleItem" />
 
     </data>
 

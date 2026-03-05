@@ -13,11 +13,11 @@
     </application>
 
     <instrumentation
-        android:name="com.topjohnwu.magisk.test.AppTestRunner"
-        android:targetPackage="com.topjohnwu.magisk" />
+        android:name="io.github.seyud.weave.test.AppTestRunner"
+        android:targetPackage="io.github.seyud.weave" />
 
     <instrumentation
-        android:name="com.topjohnwu.magisk.test.TestRunner"
-        android:targetPackage="com.topjohnwu.magisk.test" />
+        android:name="io.github.seyud.weave.test.TestRunner"
+        android:targetPackage="io.github.seyud.weave.test" />
 
 </manifest>

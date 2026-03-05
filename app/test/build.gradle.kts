@@ -3,10 +3,10 @@ plugins {
 }
 
 android {
-    namespace = "com.topjohnwu.magisk.test"
+    namespace = "io.github.seyud.weave.test"
 
     defaultConfig {
-        applicationId = "com.topjohnwu.magisk.test"
+        applicationId = "io.github.seyud.weave.test"
         versionCode = 1
         versionName = "1.0"
         proguardFile("proguard-rules.pro")

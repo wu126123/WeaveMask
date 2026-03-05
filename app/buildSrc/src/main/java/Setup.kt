@@ -294,10 +294,10 @@ fun Project.setupMainApk() {
     setupAppCommon()
 
     androidApp {
-        namespace = "com.topjohnwu.magisk"
+        namespace = "io.github.seyud.weave"
 
         defaultConfig {
-            applicationId = "com.topjohnwu.magisk"
+            applicationId = "io.github.seyud.weave"
             vectorDrawables.useSupportLibrary = true
             versionName = Config.version
             versionCode = Config.versionCode

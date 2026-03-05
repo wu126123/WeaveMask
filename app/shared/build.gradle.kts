@@ -5,6 +5,6 @@ plugins {
 setupCommon()
 
 android {
-    namespace = "com.topjohnwu.shared"
+    namespace = "io.github.seyud.shared"
     enableKotlin = false
 }

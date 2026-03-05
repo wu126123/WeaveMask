@@ -5,11 +5,11 @@
 
     <data>
 
-        <import type="com.topjohnwu.magisk.databinding.DataBindingAdaptersKt" />
+        <import type="io.github.seyud.weave.databinding.DataBindingAdaptersKt" />
 
         <variable
             name="item"
-            type="com.topjohnwu.magisk.ui.superuser.PolicyRvItem" />
+            type="io.github.seyud.weave.ui.superuser.PolicyRvItem" />
 
     </data>
 
@@ -85,7 +85,7 @@
                         app:layout_constraintStart_toStartOf="@id/policy_app_name"
                         app:layout_constraintTop_toBottomOf="@id/policy_app_name"
                         app:layout_constraintVertical_bias="0"
-                        tools:text="com.topjohnwu.magisk" />
+                        tools:text="io.github.seyud.weave" />
 
                     <FrameLayout
                         android:id="@+id/policy_indicator"

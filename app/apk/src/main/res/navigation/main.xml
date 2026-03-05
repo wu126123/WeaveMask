@@ -7,13 +7,13 @@
 
     <fragment
         android:id="@+id/denyFragment"
-        android:name="com.topjohnwu.magisk.ui.deny.DenyListFragment"
+        android:name="io.github.seyud.weave.ui.deny.DenyListFragment"
         android:label="DenyListFragment"
         tools:layout="@layout/fragment_deny_md2" />
 
     <fragment
         android:id="@+id/homeFragment"
-        android:name="com.topjohnwu.magisk.ui.home.HomeFragment"
+        android:name="io.github.seyud.weave.ui.home.HomeFragment"
         android:label="HomeFragment"
         tools:layout="@layout/fragment_home_md2">
 
@@ -37,7 +37,7 @@
 
     <fragment
         android:id="@+id/flashFragment"
-        android:name="com.topjohnwu.magisk.ui.flash.FlashFragment"
+        android:name="io.github.seyud.weave.ui.flash.FlashFragment"
         android:label="FlashFragment"
         tools:layout="@layout/fragment_flash_md2">
 
@@ -55,18 +55,18 @@
 
     <fragment
         android:id="@+id/installFragment"
-        android:name="com.topjohnwu.magisk.ui.install.InstallFragment"
+        android:name="io.github.seyud.weave.ui.install.InstallFragment"
         android:label="InstallFragment"
         tools:layout="@layout/fragment_install_md2" />
 
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.topjohnwu.magisk.ui.settings.SettingsFragment"
+        android:name="io.github.seyud.weave.ui.settings.SettingsFragment"
         android:label="SettingsFragment" />
 
     <fragment
         android:id="@+id/superuserFragment"
-        android:name="com.topjohnwu.magisk.ui.superuser.SuperuserFragment"
+        android:name="io.github.seyud.weave.ui.superuser.SuperuserFragment"
         android:label="SuperuserFragment"
         tools:layout="@layout/fragment_superuser_md2" />
 

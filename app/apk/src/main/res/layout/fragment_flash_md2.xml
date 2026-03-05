@@ -7,7 +7,7 @@
 
         <variable
             name="viewModel"
-            type="com.topjohnwu.magisk.ui.flash.FlashViewModel" />
+            type="io.github.seyud.weave.ui.flash.FlashViewModel" />
 
     </data>
 

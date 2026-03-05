@@ -7,7 +7,7 @@
 
         <variable
             name="data"
-            type="com.topjohnwu.magisk.view.MagiskDialog.Data" />
+            type="io.github.seyud.weave.view.MagiskDialog.Data" />
 
     </data>
 
