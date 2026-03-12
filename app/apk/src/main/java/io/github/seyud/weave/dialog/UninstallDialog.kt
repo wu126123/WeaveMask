@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -62,11 +60,8 @@ fun UninstallDialog(
 ) {
     if (!state.visible) return
 
-    val show = remember { mutableStateOf(true) }
-        .apply { value = state.visible }
-
     SuperDialog(
-        show = show,
+        show = state.visible,
         title = context.getString(CoreR.string.uninstall_magisk_title),
         summary = context.getString(CoreR.string.uninstall_magisk_msg),
         onDismissRequest = onDismiss

@@ -151,10 +151,10 @@ class DownloadEngine(session: DownloadSession) : DownloadSession by session, Dow
             try {
                 val stream = network.fetchFile(subject.url).toProgressStream(subject)
                 processor.handle(stream, subject)
-                val activity = AppContext.foregroundActivity
-                if (activity != null && subject.autoLaunch) {
+                val launchIntent = subject.pendingIntent(context)
+                if (subject.autoLaunch && launchIntent != null) {
                     notifyRemove(subject.notifyId)
-                    subject.pendingIntent(activity)?.send()
+                    launchIntent.send()
                 } else {
                     notifyFinish(subject)
                 }

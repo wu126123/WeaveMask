@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.seyud.weave.core.R as CoreR
@@ -52,11 +50,8 @@ fun SuperuserRevokeDialog(
 ) {
     if (!state.visible) return
 
-    val show = remember { mutableStateOf(true) }
-        .apply { value = state.visible }
-
     SuperDialog(
-        show = show,
+        show = state.visible,
         title = context.getString(CoreR.string.su_revoke_title),
         summary = context.getString(CoreR.string.su_revoke_msg, state.appName),
         onDismissRequest = onDismiss

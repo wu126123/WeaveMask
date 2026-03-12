@@ -41,7 +41,7 @@ abstract class Subject : Parcelable {
         private val json: UpdateInfo = Info.update,
         override val notifyId: Int = Notifications.nextId()
     ) : Subject() {
-        override val title: String get() = "Magisk-${json.version}(${json.versionCode})"
+        override val title: String get() = "WeaveMask-${json.version}(${json.versionCode})"
         override val url: String get() = json.link
 
         @IgnoredOnParcel
@@ -51,7 +51,19 @@ abstract class Subject : Parcelable {
 
         @IgnoredOnParcel
         var intent: Intent? = null
-        override fun pendingIntent(context: Context) = intent?.toPending(context)
+
+        override fun pendingIntent(context: Context): PendingIntent? {
+            return (intent ?: createInstallIntent()).toPending(context)
+        }
+
+        private fun createInstallIntent(): Intent {
+            return Intent(Intent.ACTION_VIEW)
+                .setDataAndType(file, "application/vnd.android.package-archive")
+                .addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+        }
     }
 
     @Parcelize

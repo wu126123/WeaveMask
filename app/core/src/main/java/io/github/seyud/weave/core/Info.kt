@@ -20,17 +20,23 @@ object Info {
     var stub: StubApk.Data? = null
 
     private val EMPTY_UPDATE = UpdateInfo()
+    private var updateCacheKey = ""
     var update = EMPTY_UPDATE
         private set
 
     suspend fun fetchUpdate(svc: NetworkService): UpdateInfo? {
-        return if (update === EMPTY_UPDATE) {
-            svc.fetchUpdate()?.apply { update = this }
+        val cacheKey = "${Config.updateChannel}|${Config.customChannelUrl}"
+        return if (update === EMPTY_UPDATE || updateCacheKey != cacheKey) {
+            svc.fetchUpdate()?.apply {
+                update = this
+                updateCacheKey = cacheKey
+            }
         } else update
     }
 
     fun resetUpdate() {
         update = EMPTY_UPDATE
+        updateCacheKey = ""
     }
 
     var isRooted = false

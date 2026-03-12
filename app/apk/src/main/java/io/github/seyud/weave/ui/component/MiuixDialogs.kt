@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
@@ -24,11 +22,6 @@ import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-private fun rememberDialogState(show: Boolean) = remember { mutableStateOf(show) }.apply {
-    value = show
-}
-
-@Composable
 fun MiuixConfirmDialog(
     show: Boolean,
     title: String,
@@ -39,10 +32,8 @@ fun MiuixConfirmDialog(
     onConfirm: () -> Unit,
     confirmTextColor: Color? = null,
 ) {
-    val showState = rememberDialogState(show)
-
     WindowDialog(
-        show = showState,
+        show = show,
         title = title,
         summary = summary,
         onDismissRequest = onDismissRequest,
@@ -88,10 +79,8 @@ fun MiuixTextInputDialog(
     onConfirm: () -> Unit,
     confirmEnabled: Boolean,
 ) {
-    val showState = rememberDialogState(show)
-
     WindowDialog(
-        show = showState,
+        show = show,
         title = title,
         summary = summary,
         onDismissRequest = onDismissRequest,
@@ -160,10 +149,8 @@ fun MiuixLoadingDialog(
     show: Boolean,
     title: String,
 ) {
-    val showState = rememberDialogState(show)
-
     WindowDialog(
-        show = showState,
+        show = show,
         title = title,
         onDismissRequest = {},
     ) {

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -54,11 +52,8 @@ fun LocalModuleInstallDialog(
 ) {
     if (!state.visible) return
 
-    val show = remember { mutableStateOf(true) }
-        .apply { value = state.visible }
-
     SuperDialog(
-        show = show,
+        show = state.visible,
         title = context.getString(CoreR.string.confirm_install_title),
         summary = context.getString(CoreR.string.confirm_install, state.displayName),
         onDismissRequest = onDismiss

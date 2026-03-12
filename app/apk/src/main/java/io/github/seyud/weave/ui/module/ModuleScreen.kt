@@ -279,7 +279,7 @@ fun ModuleScreen(
                         scrollBehavior = scrollBehavior,
                         actions = {
                             SuperListPopup(
-                                show = showTopPopup,
+                                show = showTopPopup.value,
                                 popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
                                 alignment = PopupPositionProvider.Align.TopEnd,
                                 onDismissRequest = {

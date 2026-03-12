@@ -96,8 +96,13 @@ class NetworkService(
 
     // Version number: debug == beta >= stable
 
-    // Find the latest non-prerelease
-    private suspend fun fetchStableUpdate() = api.fetchLatestRelease().asInfo()
+    // Prefer the latest stable release. If the fork is still prerelease-only,
+    // fall back to the newest available prerelease so the homepage install card remains usable.
+    private suspend fun fetchStableUpdate() = try {
+        api.fetchLatestRelease().asInfo()
+    } catch (_: Exception) {
+        findRelease { true }.asInfo()
+    }
 
     // Find the latest release, regardless whether it's prerelease
     private suspend fun fetchBetaUpdate() = findRelease { true }.asInfo()

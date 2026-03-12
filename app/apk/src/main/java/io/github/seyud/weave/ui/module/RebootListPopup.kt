@@ -51,7 +51,7 @@ fun RebootListPopup(
     }
 
     SuperListPopup(
-        show = showTopPopup,
+        show = showTopPopup.value,
         popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
         alignment = alignment,
         onDismissRequest = {

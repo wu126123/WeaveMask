@@ -31,7 +31,7 @@ fun ScaleDialog(
     SuperDialog(
         title = stringResource(CoreR.string.settings_page_scale),
         summary = "80% - 110%",
-        show = showDialog,
+        show = showDialog.value,
         onDismissRequest = { showDialog.value = false },
     ) {
         var text by remember(showDialog.value) {

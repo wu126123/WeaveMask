@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -322,8 +323,8 @@ private fun OptionsCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
-                            checked = keepVerity,
-                            onCheckedChange = { onKeepVerityChange() }
+                            state = if (keepVerity) ToggleableState.On else ToggleableState.Off,
+                            onClick = onKeepVerityChange
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -342,8 +343,8 @@ private fun OptionsCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
-                            checked = keepEnc,
-                            onCheckedChange = { onKeepEncChange() }
+                            state = if (keepEnc) ToggleableState.On else ToggleableState.Off,
+                            onClick = onKeepEncChange
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -362,8 +363,8 @@ private fun OptionsCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
-                            checked = recovery,
-                            onCheckedChange = { onRecoveryChange() }
+                            state = if (recovery) ToggleableState.On else ToggleableState.Off,
+                            onClick = onRecoveryChange
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -460,10 +461,8 @@ private fun MethodCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
-                            checked = selectedMethod == InstallMethod.PATCH,
-                            onCheckedChange = {
-                                if (it) onMethodChange(InstallMethod.PATCH)
-                            }
+                            state = if (selectedMethod == InstallMethod.PATCH) ToggleableState.On else ToggleableState.Off,
+                            onClick = { onMethodChange(InstallMethod.PATCH) }
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -481,10 +480,8 @@ private fun MethodCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
-                                checked = selectedMethod == InstallMethod.DIRECT,
-                                onCheckedChange = {
-                                    if (it) onMethodChange(InstallMethod.DIRECT)
-                                }
+                                state = if (selectedMethod == InstallMethod.DIRECT) ToggleableState.On else ToggleableState.Off,
+                                onClick = { onMethodChange(InstallMethod.DIRECT) }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
@@ -503,10 +500,8 @@ private fun MethodCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
-                                checked = selectedMethod == InstallMethod.INACTIVE_SLOT,
-                                onCheckedChange = {
-                                    if (it) onMethodChange(InstallMethod.INACTIVE_SLOT)
-                                }
+                                state = if (selectedMethod == InstallMethod.INACTIVE_SLOT) ToggleableState.On else ToggleableState.Off,
+                                onClick = { onMethodChange(InstallMethod.INACTIVE_SLOT) }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(

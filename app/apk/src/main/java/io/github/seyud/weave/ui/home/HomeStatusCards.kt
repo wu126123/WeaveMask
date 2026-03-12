@@ -1,0 +1,516 @@
+package io.github.seyud.weave.ui.home
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import io.github.seyud.weave.R
+import io.github.seyud.weave.core.R as CoreR
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Backup
+import top.yukonga.miuix.kmp.icon.extended.ChevronForward
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.extended.Pin
+import top.yukonga.miuix.kmp.icon.extended.Update
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.PressFeedbackType
+
+@Composable
+internal fun NoticeCard(
+    onHide: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = MiuixTheme.colorScheme.primary,
+            contentColor = MiuixTheme.colorScheme.onPrimary
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = context.getString(CoreR.string.home_notice_content),
+                modifier = Modifier.weight(1f),
+                color = MiuixTheme.colorScheme.onPrimary,
+                style = MiuixTheme.textStyles.body1
+            )
+            TextButton(
+                text = context.getString(CoreR.string.hide),
+                onClick = onHide,
+                colors = ButtonDefaults.textButtonColors(
+                    textColor = MiuixTheme.colorScheme.onPrimary,
+                    color = Color.Transparent
+                )
+            )
+        }
+    }
+}
+
+@Composable
+internal fun MagiskCard(
+    magiskState: HomeViewModel.State,
+    installedVersion: String,
+    onPressed: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = CoreR.drawable.ic_magisk_outline),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary),
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = context.getString(CoreR.string.magisk),
+                        style = MiuixTheme.textStyles.title3,
+                        color = MiuixTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = installedVersion,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                when (magiskState) {
+                    HomeViewModel.State.OUTDATED -> {
+                        MagiskActionButton(
+                            icon = MiuixIcons.Update,
+                            text = context.getString(CoreR.string.update),
+                            onPressed = onPressed
+                        )
+                    }
+
+                    HomeViewModel.State.LOADING -> {
+                        CircularProgressIndicator(
+                            size = 24.dp,
+                            strokeWidth = 2.dp
+                        )
+                    }
+
+                    else -> {
+                        MagiskActionButton(
+                            icon = MiuixIcons.Download,
+                            text = context.getString(CoreR.string.install),
+                            onPressed = onPressed
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MagiskActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    onPressed: () -> Unit,
+) {
+    Surface(
+        onClick = onPressed,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = text,
+                color = MiuixTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ZygiskCard(
+    isEnabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val statusColor = if (isEnabled) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
+
+    Card(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Pin,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = context.getString(CoreR.string.zygisk),
+                style = MiuixTheme.textStyles.body2,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = if (isEnabled) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
+                style = MiuixTheme.textStyles.body2,
+                color = statusColor,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+internal fun RamdiskCard(
+    isAvailable: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val statusColor = if (isAvailable) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
+
+    Card(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Backup,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Ramdisk",
+                style = MiuixTheme.textStyles.body2,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = if (isAvailable) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
+                style = MiuixTheme.textStyles.body2,
+                color = statusColor,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ManagerCard(
+    appState: HomeViewModel.State,
+    remoteVersion: String,
+    installedVersion: String,
+    packageName: String,
+    progress: Int,
+    expanded: Boolean,
+    onCardClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val isInteractive = appState == HomeViewModel.State.OUTDATED ||
+        appState == HomeViewModel.State.UP_TO_DATE
+    val actionLabel = when (appState) {
+        HomeViewModel.State.OUTDATED -> context.getString(CoreR.string.update)
+        HomeViewModel.State.UP_TO_DATE -> context.getString(CoreR.string.install)
+        HomeViewModel.State.INVALID -> context.getString(CoreR.string.no_connection)
+        HomeViewModel.State.LOADING -> context.getString(CoreR.string.loading)
+    }
+    val actionIcon = when (appState) {
+        HomeViewModel.State.OUTDATED -> MiuixIcons.Update
+        else -> MiuixIcons.Download
+    }
+    val actionColor = when (appState) {
+        HomeViewModel.State.INVALID -> MiuixTheme.colorScheme.error
+        HomeViewModel.State.LOADING -> MiuixTheme.colorScheme.onSurfaceVariantSummary
+        else -> MiuixTheme.colorScheme.primary
+    }
+
+    Card(
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth(),
+        pressFeedbackType = if (isInteractive) PressFeedbackType.Sink else PressFeedbackType.None,
+        onClick = if (isInteractive) onCardClick else null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_manager),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary),
+                    modifier = Modifier.size(40.dp)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = context.getString(CoreR.string.home_app_title),
+                    style = MiuixTheme.textStyles.title3,
+                    color = MiuixTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (appState == HomeViewModel.State.LOADING) {
+                    CircularProgressIndicator(
+                        size = 24.dp,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Icon(
+                            imageVector = actionIcon,
+                            contentDescription = null,
+                            tint = actionColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = actionLabel,
+                            color = actionColor,
+                            style = MiuixTheme.textStyles.body2,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (isInteractive) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = MiuixIcons.ChevronForward,
+                                contentDescription = null,
+                                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .graphicsLayer {
+                                        rotationZ = if (expanded) 90f else 0f
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(modifier = Modifier.fillMaxWidth()) {
+                HomeItemRow(
+                    label = context.getString(CoreR.string.home_latest_version),
+                    value = remoteVersion
+                )
+                HomeItemRow(
+                    label = context.getString(CoreR.string.home_installed_version),
+                    value = installedVersion
+                )
+                HomeItemRow(
+                    label = context.getString(CoreR.string.home_package),
+                    value = packageName
+                )
+            }
+
+            if (progress > 0 && progress < 100) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = progress / 100f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ManagerInstallAction(
+    appState: HomeViewModel.State,
+    onClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val icon = if (appState == HomeViewModel.State.OUTDATED) MiuixIcons.Update else MiuixIcons.Download
+    val text = if (appState == HomeViewModel.State.OUTDATED) {
+        context.getString(CoreR.string.update)
+    } else {
+        context.getString(CoreR.string.install)
+    }
+    val buttonColors = if (appState == HomeViewModel.State.OUTDATED) {
+        ButtonDefaults.buttonColorsPrimary()
+    } else {
+        ButtonDefaults.buttonColors()
+    }
+    val iconTint = if (appState == HomeViewModel.State.OUTDATED) {
+        MiuixTheme.colorScheme.onPrimary
+    } else {
+        MiuixTheme.colorScheme.onSecondaryVariant
+    }
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        colors = buttonColors
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = text,
+            color = iconTint
+        )
+    }
+}
+
+@Composable
+internal fun UninstallButton(
+    onPressed: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Surface(
+        onClick = onPressed,
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth(),
+        color = MiuixTheme.colorScheme.errorContainer,
+        border = BorderStroke(1.dp, MiuixTheme.colorScheme.error),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Delete,
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = context.getString(CoreR.string.uninstall_magisk_title),
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeItemRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MiuixTheme.textStyles.body2,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value,
+            style = MiuixTheme.textStyles.body2,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End
+        )
+    }
+}

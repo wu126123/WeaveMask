@@ -96,11 +96,8 @@ fun EnvFixDialog(
         else -> context.getString(CoreR.string.env_fix_msg)
     }
 
-    val show = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-        .apply { value = state.visible }
-
     SuperDialog(
-        show = show,
+        show = state.visible,
         title = title,
         summary = summary,
         onDismissRequest = onDismiss

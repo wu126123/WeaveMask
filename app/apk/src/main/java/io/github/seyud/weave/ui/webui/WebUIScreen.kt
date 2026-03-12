@@ -145,7 +145,7 @@ private fun HandleWebUIEvent(
             val showDialog = remember { mutableStateOf(true) }
             if (showDialog.value) {
                 SuperDialog(
-                    show = showDialog,
+                    show = showDialog.value,
                     title = "",
                     onDismissRequest = {
                         showDialog.value = false
@@ -173,7 +173,7 @@ private fun HandleWebUIEvent(
             val showDialog = remember { mutableStateOf(true) }
             if (showDialog.value) {
                 SuperDialog(
-                    show = showDialog,
+                    show = showDialog.value,
                     title = "",
                     onDismissRequest = {
                         showDialog.value = false
@@ -209,7 +209,7 @@ private fun HandleWebUIEvent(
             var inputValue by remember { mutableStateOf(event.defaultValue) }
             if (showDialog.value) {
                 SuperDialog(
-                    show = showDialog,
+                    show = showDialog.value,
                     title = "",
                     onDismissRequest = {
                         showDialog.value = false

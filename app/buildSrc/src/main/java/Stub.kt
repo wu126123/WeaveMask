@@ -219,7 +219,8 @@ private fun genStubClasses(outDir: File): Pair<String, String> {
         pkgDir.mkdirs()
         PrintStream(File(pkgDir, "$name.java")).use {
             it.println("package $pkg;")
-            it.println("public class $name extends io.github.seyud.weave.$type {}")
+            it.println("import io.github.seyud.weave.$type;")
+            it.println("public class $name extends $type {}")
         }
         return clzName
     }

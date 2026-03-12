@@ -27,7 +27,6 @@ import io.github.seyud.weave.core.repository.NetworkService
 import io.github.seyud.weave.databinding.bindExtra
 import io.github.seyud.weave.databinding.set
 import io.github.seyud.weave.dialog.EnvFixDialog
-import io.github.seyud.weave.dialog.ManagerInstallDialog
 import io.github.seyud.weave.dialog.UninstallDialog
 import io.github.seyud.weave.events.SnackbarEvent
 import io.github.seyud.weave.utils.TextHolder
@@ -85,6 +84,12 @@ class HomeViewModel(
     var appState by mutableStateOf(State.LOADING)
         private set
 
+    /**
+     * App 安装说明弹窗是否显示
+     */
+    var isManagerInstallDialogVisible by mutableStateOf(false)
+        private set
+
     val magiskInstalledVersion
         get() = Info.env.run {
             if (isActive)
@@ -104,6 +109,9 @@ class HomeViewModel(
         get() = "${BuildConfig.APP_VERSION_NAME} (${BuildConfig.APP_VERSION_CODE})" +
             if (BuildConfig.DEBUG) " (D)" else ""
 
+    val managerReleaseNotes
+        get() = Info.update.note
+
     /**
      * 应用包名
      */
@@ -121,6 +129,8 @@ class HomeViewModel(
     companion object {
         private var checkedEnv = false
     }
+
+    private var lastNetworkState: Boolean? = null
 
     override suspend fun doLoadWork() {
         appState = State.LOADING
@@ -140,7 +150,13 @@ class HomeViewModel(
         ensureEnv()
     }
 
-    override fun onNetworkChanged(network: Boolean) = startLoading()
+    override fun onNetworkChanged(network: Boolean) {
+        val previous = lastNetworkState
+        lastNetworkState = network
+        if (previous != null && previous != network) {
+            startLoading()
+        }
+    }
 
     fun onProgressUpdate(progress: Float, subject: Subject) {
         if (subject is App)
@@ -187,9 +203,13 @@ class HomeViewModel(
         State.INVALID -> SnackbarEvent(CoreR.string.no_connection).publish()
         else -> withExternalRW {
             withInstallPermission {
-                ManagerInstallDialog().show()
+                isManagerInstallDialogVisible = true
             }
         }
+    }
+
+    fun dismissManagerInstallDialog() {
+        isManagerInstallDialogVisible = false
     }
 
     fun onMagiskPressed() = withExternalRW {

@@ -514,7 +514,7 @@ fun SettingsScreen(
                     )
 
                     // 自定义更新通道 URL
-                    if (updateChannelIndex == Config.Value.CUSTOM_CHANNEL) {
+                    AnimatedVisibility(visible = updateChannelIndex == Config.Value.CUSTOM_CHANNEL) {
                         SuperArrow(
                             title = stringResource(CoreR.string.settings_update_custom),
                             summary = UpdateChannelUrl.getDescription(res),
