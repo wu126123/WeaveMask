@@ -165,6 +165,7 @@ fun SettingsScreen(
         mutableStateOf(TextFieldValue(Config.downloadDir))
     }
     var showHideDialog by rememberSaveable { mutableStateOf(false) }
+    var showRestoreConfirmDialog by rememberSaveable { mutableStateOf(false) }
     var hideAppName by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(HideAppDefaultName))
     }
@@ -627,14 +628,7 @@ fun SettingsScreen(
                                 },
                                 onClick = {
                                     if (!isRestoreInProgress) {
-                                        coroutineScope.launch {
-                                            isRestoreInProgress = true
-                                            val success = viewModel.restoreApp(context)
-                                            isRestoreInProgress = false
-                                            if (!success) {
-                                                context.toast(CoreR.string.failure, Toast.LENGTH_LONG)
-                                            }
-                                        }
+                                        showRestoreConfirmDialog = true
                                     }
                                 }
                             )
@@ -912,6 +906,32 @@ fun SettingsScreen(
     HideAppLoadingDialog(
         show = isRestoreInProgress,
         title = stringResource(CoreR.string.restore_img_msg),
+    )
+
+    io.github.seyud.weave.ui.component.MiuixConfirmDialog(
+        show = showRestoreConfirmDialog,
+        title = stringResource(CoreR.string.settings_restore_app_title),
+        summary = stringResource(CoreR.string.restore_app_confirmation),
+        confirmText = stringResource(android.R.string.ok),
+        dismissText = stringResource(android.R.string.cancel),
+        onDismissRequest = {
+            if (!isRestoreInProgress) {
+                showRestoreConfirmDialog = false
+            }
+        },
+        onConfirm = {
+            if (!isRestoreInProgress) {
+                showRestoreConfirmDialog = false
+                coroutineScope.launch {
+                    isRestoreInProgress = true
+                    val success = viewModel.restoreApp(context)
+                    isRestoreInProgress = false
+                    if (!success) {
+                        context.toast(CoreR.string.failure, Toast.LENGTH_LONG)
+                    }
+                }
+            }
+        },
     )
 
     io.github.seyud.weave.ui.component.MiuixTextInputDialog(
