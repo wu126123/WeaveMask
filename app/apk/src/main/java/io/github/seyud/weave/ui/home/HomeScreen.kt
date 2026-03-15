@@ -15,6 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -57,11 +59,25 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     var hasStartedLoading by rememberSaveable { mutableStateOf(false) }
+    var isMagiskCardExpanded by rememberSaveable { mutableStateOf(false) }
     var isManagerCardExpanded by rememberSaveable { mutableStateOf(false) }
     val scrollBehavior = MiuixScrollBehavior()
     val enableBlur = LocalEnableBlur.current
     val hazeState = remember { HazeState() }
+    val cardActionEnter = fadeIn(
+        animationSpec = tween(durationMillis = 220)
+    ) + expandVertically(
+        expandFrom = Alignment.Top,
+        animationSpec = tween(durationMillis = 260)
+    )
+    val cardActionExit = fadeOut(
+        animationSpec = tween(durationMillis = 180)
+    ) + shrinkVertically(
+        shrinkTowards = Alignment.Top,
+        animationSpec = tween(durationMillis = 220)
+    )
     val hazeStyle = if (enableBlur) {
         HazeStyle(
             backgroundColor = MiuixTheme.colorScheme.surface,
@@ -69,6 +85,10 @@ fun HomeScreen(
         )
     } else {
         HazeStyle.Unspecified
+    }
+
+    LaunchedEffect(configuration) {
+        viewModel.dismissManagerInstallDialog()
     }
 
     LaunchedEffect(viewModel.appState) {
@@ -147,19 +167,36 @@ fun HomeScreen(
 
             // Core 板块
             item {
-                MagiskCard(
-                    magiskState = viewModel.magiskState,
-                    installedVersion = viewModel.magiskInstalledVersion.getText(context.resources).toString(),
-                    onPressed = onNavigateToInstall
-                )
-            }
-
-            // 卸载按钮（红色警告色）
-            if (Info.env.isActive) {
-                item {
-                    UninstallButton(
-                        onPressed = { viewModel.onDeletePressed() }
+                Column {
+                    MagiskCard(
+                        magiskState = viewModel.magiskState,
+                        installedVersion = viewModel.magiskInstalledVersion.getText(context.resources).toString(),
+                        expanded = isMagiskCardExpanded,
+                        onCardClick = {
+                            isMagiskCardExpanded = !isMagiskCardExpanded
+                        },
+                        onInstallClick = onNavigateToInstall
                     )
+
+                    AnimatedVisibility(
+                        visible = isMagiskCardExpanded,
+                        enter = cardActionEnter,
+                        exit = cardActionExit
+                    ) {
+                        Column {
+                            InstallActionButton(
+                                appState = viewModel.magiskState,
+                                matchUninstallMetrics = true,
+                                onClick = onNavigateToInstall
+                            )
+                            if (Info.env.isActive) {
+                                UninstallButton(
+                                    text = context.getString(CoreR.string.home_uninstall_weavemask),
+                                    onPressed = { viewModel.onDeletePressed() }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -194,25 +231,18 @@ fun HomeScreen(
                         expanded = isManagerCardExpanded,
                         onCardClick = {
                             isManagerCardExpanded = !isManagerCardExpanded
-                        }
+                        },
+                        onInstallClick = { viewModel.onManagerPressed() }
                     )
 
                     AnimatedVisibility(
                         visible = isManagerCardExpanded &&
                             viewModel.appState != HomeViewModel.State.LOADING &&
                             viewModel.appState != HomeViewModel.State.INVALID,
-                        enter = expandVertically(
-                            animationSpec = tween(durationMillis = 260)
-                        ) + fadeIn(
-                            animationSpec = tween(durationMillis = 220)
-                        ),
-                        exit = shrinkVertically(
-                            animationSpec = tween(durationMillis = 220)
-                        ) + fadeOut(
-                            animationSpec = tween(durationMillis = 180)
-                        )
+                        enter = cardActionEnter,
+                        exit = cardActionExit
                     ) {
-                        ManagerInstallAction(
+                        InstallActionButton(
                             appState = viewModel.appState,
                             onClick = { viewModel.onManagerPressed() }
                         )

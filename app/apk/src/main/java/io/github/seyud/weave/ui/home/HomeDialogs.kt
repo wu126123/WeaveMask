@@ -70,7 +70,7 @@ internal fun HomeDialogHost(
 
     ManagerInstallDialog(
         show = viewModel.isManagerInstallDialogVisible,
-        title = "APP",
+        title = context.getString(CoreR.string.home_app_title),
         version = viewModel.managerRemoteVersion.getText(context.resources).toString(),
         releaseNotes = viewModel.managerReleaseNotes,
         installEnabled = viewModel.canInstallManagerUpdate,

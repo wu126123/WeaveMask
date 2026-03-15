@@ -54,7 +54,7 @@ internal fun SupportCard(
             Text(
                 text = context.getString(CoreR.string.home_support_content),
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceContainer
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
 
             Spacer(modifier = Modifier.height(8.dp))

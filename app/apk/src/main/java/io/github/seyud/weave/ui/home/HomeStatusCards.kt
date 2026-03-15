@@ -3,7 +3,6 @@ package io.github.seyud.weave.ui.home
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +13,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -90,14 +92,34 @@ internal fun NoticeCard(
 internal fun MagiskCard(
     magiskState: HomeViewModel.State,
     installedVersion: String,
-    onPressed: () -> Unit,
+    expanded: Boolean,
+    onCardClick: () -> Unit,
+    onInstallClick: () -> Unit,
 ) {
     val context = LocalContext.current
+    val isInteractive = magiskState != HomeViewModel.State.LOADING
+    val actionText = if (magiskState == HomeViewModel.State.OUTDATED) {
+        context.getString(CoreR.string.update)
+    } else {
+        context.getString(CoreR.string.install)
+    }
+    val actionIcon = if (magiskState == HomeViewModel.State.OUTDATED) {
+        MiuixIcons.Update
+    } else {
+        MiuixIcons.Download
+    }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 90f else 0f,
+        animationSpec = tween(durationMillis = 260),
+        label = "magiskCardChevronRotation"
+    )
 
     Card(
         modifier = Modifier
             .padding(top = 12.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        pressFeedbackType = if (isInteractive) PressFeedbackType.Sink else PressFeedbackType.None,
+        onClick = if (isInteractive) onCardClick else null
     ) {
         Column(
             modifier = Modifier
@@ -135,14 +157,6 @@ internal fun MagiskCard(
                 }
 
                 when (magiskState) {
-                    HomeViewModel.State.OUTDATED -> {
-                        MagiskActionButton(
-                            icon = MiuixIcons.Update,
-                            text = context.getString(CoreR.string.update),
-                            onPressed = onPressed
-                        )
-                    }
-
                     HomeViewModel.State.LOADING -> {
                         CircularProgressIndicator(
                             size = 24.dp,
@@ -151,11 +165,29 @@ internal fun MagiskCard(
                     }
 
                     else -> {
-                        MagiskActionButton(
-                            icon = MiuixIcons.Download,
-                            text = context.getString(CoreR.string.install),
-                            onPressed = onPressed
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            InlineCardActionButton(
+                                icon = actionIcon,
+                                text = actionText,
+                                onPressed = onInstallClick
+                            )
+                            if (isInteractive) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = MiuixIcons.ChevronForward,
+                                    contentDescription = null,
+                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .graphicsLayer {
+                                            rotationZ = chevronRotation
+                                        }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -164,7 +196,7 @@ internal fun MagiskCard(
 }
 
 @Composable
-private fun MagiskActionButton(
+private fun InlineCardActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     onPressed: () -> Unit,
@@ -189,6 +221,130 @@ private fun MagiskActionButton(
             Text(
                 text = text,
                 color = MiuixTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+internal fun InstallActionButton(
+    appState: HomeViewModel.State,
+    matchUninstallMetrics: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val icon = if (appState == HomeViewModel.State.OUTDATED) MiuixIcons.Update else MiuixIcons.Download
+    val text = if (appState == HomeViewModel.State.OUTDATED) {
+        context.getString(CoreR.string.update)
+    } else {
+        context.getString(CoreR.string.install)
+    }
+    val buttonColors = if (appState == HomeViewModel.State.OUTDATED) {
+        ButtonDefaults.buttonColorsPrimary()
+    } else {
+        ButtonDefaults.buttonColors()
+    }
+    val iconTint = if (appState == HomeViewModel.State.OUTDATED) {
+        MiuixTheme.colorScheme.onPrimary
+    } else {
+        MiuixTheme.colorScheme.onSecondaryVariant
+    }
+
+    if (matchUninstallMetrics) {
+        val containerColor = if (appState == HomeViewModel.State.OUTDATED) {
+            MiuixTheme.colorScheme.primary
+        } else {
+            MiuixTheme.colorScheme.secondaryContainer
+        }
+
+        Surface(
+            onClick = onClick,
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .fillMaxWidth(),
+            color = containerColor,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = text,
+                    style = MiuixTheme.textStyles.body2,
+                    color = iconTint
+                )
+            }
+        }
+        return
+    }
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        colors = buttonColors
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = text,
+            color = iconTint
+        )
+    }
+}
+
+@Composable
+internal fun UninstallButton(
+    text: String? = null,
+    onPressed: () -> Unit,
+) {
+    val context = LocalContext.current
+    val buttonText = text ?: context.getString(CoreR.string.uninstall_magisk_title)
+
+    Surface(
+        onClick = onPressed,
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth(),
+        color = MiuixTheme.colorScheme.errorContainer,
+        border = BorderStroke(1.dp, MiuixTheme.colorScheme.error),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Delete,
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = buttonText,
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onErrorContainer
             )
         }
     }
@@ -224,7 +380,9 @@ internal fun ZygiskCard(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = if (isEnabled) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
+                text = context.getString(
+                    if (isEnabled) CoreR.string.home_status_enabled else CoreR.string.home_status_disabled
+                ),
                 style = MiuixTheme.textStyles.body2,
                 color = statusColor,
                 fontWeight = FontWeight.Medium
@@ -263,7 +421,9 @@ internal fun RamdiskCard(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = if (isAvailable) context.getString(CoreR.string.yes) else context.getString(CoreR.string.no),
+                text = context.getString(
+                    if (isAvailable) CoreR.string.home_status_supported else CoreR.string.home_status_unsupported
+                ),
                 style = MiuixTheme.textStyles.body2,
                 color = statusColor,
                 fontWeight = FontWeight.Medium
@@ -281,6 +441,7 @@ internal fun ManagerCard(
     progress: Int,
     expanded: Boolean,
     onCardClick: () -> Unit,
+    onInstallClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val isInteractive = appState == HomeViewModel.State.OUTDATED ||
@@ -300,6 +461,11 @@ internal fun ManagerCard(
         HomeViewModel.State.LOADING -> MiuixTheme.colorScheme.onSurfaceVariantSummary
         else -> MiuixTheme.colorScheme.primary
     }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 90f else 0f,
+        animationSpec = tween(durationMillis = 260),
+        label = "managerCardChevronRotation"
+    )
 
     Card(
         modifier = Modifier
@@ -345,20 +511,12 @@ internal fun ManagerCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End
                     ) {
-                        Icon(
-                            imageVector = actionIcon,
-                            contentDescription = null,
-                            tint = actionColor,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = actionLabel,
-                            color = actionColor,
-                            style = MiuixTheme.textStyles.body2,
-                            fontWeight = FontWeight.Medium
-                        )
                         if (isInteractive) {
+                            InlineCardActionButton(
+                                icon = actionIcon,
+                                text = actionLabel,
+                                onPressed = onInstallClick
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = MiuixIcons.ChevronForward,
@@ -367,8 +525,22 @@ internal fun ManagerCard(
                                 modifier = Modifier
                                     .size(16.dp)
                                     .graphicsLayer {
-                                        rotationZ = if (expanded) 90f else 0f
+                                        rotationZ = chevronRotation
                                     }
+                            )
+                        } else {
+                            Icon(
+                                imageVector = actionIcon,
+                                contentDescription = null,
+                                tint = actionColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = actionLabel,
+                                color = actionColor,
+                                style = MiuixTheme.textStyles.body2,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
@@ -404,88 +576,6 @@ internal fun ManagerCard(
 }
 
 @Composable
-internal fun ManagerInstallAction(
-    appState: HomeViewModel.State,
-    onClick: () -> Unit,
-) {
-    val context = LocalContext.current
-    val icon = if (appState == HomeViewModel.State.OUTDATED) MiuixIcons.Update else MiuixIcons.Download
-    val text = if (appState == HomeViewModel.State.OUTDATED) {
-        context.getString(CoreR.string.update)
-    } else {
-        context.getString(CoreR.string.install)
-    }
-    val buttonColors = if (appState == HomeViewModel.State.OUTDATED) {
-        ButtonDefaults.buttonColorsPrimary()
-    } else {
-        ButtonDefaults.buttonColors()
-    }
-    val iconTint = if (appState == HomeViewModel.State.OUTDATED) {
-        MiuixTheme.colorScheme.onPrimary
-    } else {
-        MiuixTheme.colorScheme.onSecondaryVariant
-    }
-
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp),
-        colors = buttonColors
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = text,
-            color = iconTint
-        )
-    }
-}
-
-@Composable
-internal fun UninstallButton(
-    onPressed: () -> Unit,
-) {
-    val context = LocalContext.current
-
-    Surface(
-        onClick = onPressed,
-        modifier = Modifier
-            .padding(top = 12.dp)
-            .fillMaxWidth(),
-        color = MiuixTheme.colorScheme.errorContainer,
-        border = BorderStroke(1.dp, MiuixTheme.colorScheme.error),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = MiuixIcons.Delete,
-                contentDescription = null,
-                tint = MiuixTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = context.getString(CoreR.string.uninstall_magisk_title),
-                style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onErrorContainer
-            )
-        }
-    }
-}
-
-@Composable
 private fun HomeItemRow(
     label: String,
     value: String,
@@ -506,6 +596,7 @@ private fun HomeItemRow(
         Text(
             text = value,
             style = MiuixTheme.textStyles.body2,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
             maxLines = 1,

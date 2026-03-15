@@ -21,6 +21,11 @@
     <string name="hide">Hide</string>
     <string name="home_package">Package</string>
     <string name="home_app_title">App</string>
+    <string name="home_status_enabled">Yes</string>
+    <string name="home_status_disabled">No</string>
+    <string name="home_status_supported">Yes</string>
+    <string name="home_status_unsupported">No</string>
+    <string name="home_uninstall_weavemask">Uninstall WeaveMask</string>
     <string name="home_notice_content">Download Magisk ONLY from the official GitHub page. Files from unknown sources can be malicious!</string>
     <string name="home_support_title">Support Us</string>
     <string name="home_follow_title">Follow Us</string>
