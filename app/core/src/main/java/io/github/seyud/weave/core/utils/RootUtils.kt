@@ -4,7 +4,10 @@ import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.IBinder
+import android.os.UserManager
 import android.system.Os
 import androidx.core.content.getSystemService
 import io.github.seyud.weave.core.Const
@@ -47,6 +50,8 @@ class RootUtils(stub: Any?) : RootService() {
             override fun getAppProcess(pid: Int) = safe(null) { getAppProcessImpl(pid) }
             override fun getFileSystem(): IBinder = FileSystemManager.getService()
             override fun addSystemlessHosts() = safe(false) { addSystemlessHostsImpl() }
+            override fun getInstalledApplications(flags: Int) = safe(emptyList()) { getInstalledApplicationsImpl(flags) }
+            override fun getUserIds() = safe(intArrayOf(0)) { getAllUserIds() }
         }
     }
 
@@ -90,6 +95,59 @@ class RootUtils(stub: Any?) : RootService() {
         File("/system/etc/hosts").copyTo(hosts)
         File(module, "update").createNewFile()
         return true
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun getInstalledApplicationsAsUser(flags: Int, userId: Int): List<ApplicationInfo> {
+        return try {
+            val pm: PackageManager = packageManager
+            val method = pm.javaClass.getDeclaredMethod(
+                "getInstalledApplicationsAsUser",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType
+            )
+            method.invoke(pm, flags, userId) as List<ApplicationInfo>
+        } catch (e: Throwable) {
+            Timber.e(e, "getInstalledApplicationsAsUser reflection failed")
+            emptyList()
+        }
+    }
+
+    private fun getAllUserIds(): IntArray {
+        val um = getSystemService(USER_SERVICE) as? UserManager ?: return intArrayOf(0)
+        // Try getUsers(boolean excludeDying) - API 17+
+        try {
+            val method = um.javaClass.getMethod("getUsers", Boolean::class.javaPrimitiveType)
+            val users = method.invoke(um, true) as? List<*>
+            if (!users.isNullOrEmpty()) {
+                return users.mapNotNull { 
+                    it?.javaClass?.getMethod("getUserId")?.invoke(it) as? Int 
+                }.toIntArray()
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "getUsers reflection failed")
+        }
+        // Try getAliveUsers() - API 31+
+        try {
+            val method = um.javaClass.getMethod("getAliveUsers")
+            val users = method.invoke(um) as? List<*>
+            if (!users.isNullOrEmpty()) {
+                return users.mapNotNull { 
+                    it?.javaClass?.getMethod("getUserId")?.invoke(it) as? Int 
+                }.toIntArray()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "getAliveUsers reflection failed")
+        }
+        return intArrayOf(0)
+    }
+
+    private fun getInstalledApplicationsImpl(flags: Int): List<ApplicationInfo> {
+        val apps = ArrayList<ApplicationInfo>()
+        for (userId in getAllUserIds()) {
+            apps.addAll(getInstalledApplicationsAsUser(flags, userId))
+        }
+        return apps
     }
 
     object Connection : AbstractQueuedSynchronizer(), ServiceConnection {
@@ -155,6 +213,11 @@ class RootUtils(stub: Any?) : RootService() {
 
         suspend fun addSystemlessHosts() =
             withContext(Dispatchers.IO) { safe(false) { obj?.addSystemlessHosts() ?: false } }
+
+        fun getInstalledApplications(flags: Int): List<ApplicationInfo> =
+            safe(emptyList()) { obj?.getInstalledApplications(flags) ?: emptyList() }
+
+        fun getUserIds(): IntArray = safe(intArrayOf(0)) { obj?.userIds ?: intArrayOf(0) }
 
         private inline fun <T> safe(default: T, block: () -> T): T {
             return try {

@@ -7,4 +7,6 @@ interface IRootUtils {
     android.app.ActivityManager.RunningAppProcessInfo getAppProcess(int pid);
     IBinder getFileSystem();
     boolean addSystemlessHosts();
+    List<android.content.pm.ApplicationInfo> getInstalledApplications(int flags);
+    int[] getUserIds();
 }

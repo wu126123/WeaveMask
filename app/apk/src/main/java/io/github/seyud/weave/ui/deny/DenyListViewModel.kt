@@ -9,6 +9,7 @@ import com.topjohnwu.superuser.Shell
 import io.github.seyud.weave.arch.AsyncLoadViewModel
 import io.github.seyud.weave.core.AppContext
 import io.github.seyud.weave.core.ktx.concurrentMap
+import io.github.seyud.weave.core.utils.RootUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -142,7 +143,9 @@ class DenyListViewModel : AsyncLoadViewModel() {
             val (denyList, apps) = withContext(Dispatchers.IO) {
                 val pm = AppContext.packageManager
                 val denyEntries = Shell.cmd("magisk --denylist ls").exec().out.map(::CmdlineListItem)
-                val collected = pm.getInstalledApplications(MATCH_UNINSTALLED_PACKAGES).run {
+                // Use RootService to get installed applications, bypassing QUERY_ALL_PACKAGES permission
+                val installedApps = RootUtils.getInstalledApplications(MATCH_UNINSTALLED_PACKAGES)
+                val collected = installedApps.run {
                     asFlow()
                         .filter { AppContext.packageName != it.packageName }
                         .concurrentMap { buildDenyListAppInfo(it, pm, denyEntries) }
