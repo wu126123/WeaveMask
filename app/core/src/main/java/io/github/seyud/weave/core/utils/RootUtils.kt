@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.os.UserManager
@@ -52,6 +53,7 @@ class RootUtils(stub: Any?) : RootService() {
             override fun addSystemlessHosts() = safe(false) { addSystemlessHostsImpl() }
             override fun getInstalledApplications(flags: Int) = safe(emptyList()) { getInstalledApplicationsImpl(flags) }
             override fun getUserIds() = safe(intArrayOf(0)) { getAllUserIds() }
+            override fun getPackages(flags: Int) = safe(emptyList()) { getPackagesImpl(flags) }
         }
     }
 
@@ -150,6 +152,38 @@ class RootUtils(stub: Any?) : RootService() {
         return apps
     }
 
+    /**
+     * Get installed packages for a specific user via reflection.
+     * This bypasses the QUERY_ALL_PACKAGES permission requirement.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun getInstalledPackagesAsUser(flags: Int, userId: Int): List<PackageInfo> {
+        return try {
+            val pm: PackageManager = packageManager
+            val method = pm.javaClass.getDeclaredMethod(
+                "getInstalledPackagesAsUser",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType
+            )
+            method.invoke(pm, flags, userId) as List<PackageInfo>
+        } catch (e: Throwable) {
+            Timber.e(e, "getInstalledPackagesAsUser reflection failed")
+            emptyList()
+        }
+    }
+
+    /**
+     * Get all installed packages across all users.
+     * Uses root privileges to bypass package visibility restrictions.
+     */
+    private fun getPackagesImpl(flags: Int): List<PackageInfo> {
+        val packages = ArrayList<PackageInfo>()
+        for (userId in getAllUserIds()) {
+            packages.addAll(getInstalledPackagesAsUser(flags, userId))
+        }
+        return packages
+    }
+
     object Connection : AbstractQueuedSynchronizer(), ServiceConnection {
         init {
             state = 1
@@ -216,6 +250,13 @@ class RootUtils(stub: Any?) : RootService() {
 
         fun getInstalledApplications(flags: Int): List<ApplicationInfo> =
             safe(emptyList()) { obj?.getInstalledApplications(flags) ?: emptyList() }
+
+        /**
+         * Get all installed packages via RootService.
+         * This bypasses the QUERY_ALL_PACKAGES permission requirement on Android 11+.
+         */
+        fun getPackages(flags: Int): List<PackageInfo> =
+            safe(emptyList()) { obj?.getPackages(flags) ?: emptyList() }
 
         fun getUserIds(): IntArray = safe(intArrayOf(0)) { obj?.userIds ?: intArrayOf(0) }
 

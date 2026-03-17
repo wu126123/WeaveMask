@@ -9,4 +9,5 @@ interface IRootUtils {
     boolean addSystemlessHosts();
     List<android.content.pm.ApplicationInfo> getInstalledApplications(int flags);
     int[] getUserIds();
+    List<android.content.pm.PackageInfo> getPackages(int flags);
 }

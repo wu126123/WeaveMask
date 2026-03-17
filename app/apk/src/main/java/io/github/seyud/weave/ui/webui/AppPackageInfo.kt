@@ -13,12 +13,12 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import io.github.seyud.weave.core.ktx.getLabel
+import io.github.seyud.weave.core.utils.RootUtils
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.Collator
 import java.util.Locale
 
-private const val PACKAGE_INFO_FLAGS = PackageManager.MATCH_UNINSTALLED_PACKAGES
 private const val ICON_CACHE_SIZE = 200
 
 private data class WebUiAppInfo(
@@ -100,11 +100,23 @@ internal object WebUiPackageRegistry {
         return bitmap
     }
 
+    /**
+     * Load installed apps using RootService to bypass package visibility restrictions.
+     * Falls back to direct PackageManager call if RootService is unavailable.
+     */
     private fun loadApps(context: Context): List<WebUiAppInfo> {
         cachedApps?.let { return it }
 
         val packageManager = context.packageManager
-        val apps = packageManager.getInstalledPackages(PACKAGE_INFO_FLAGS)
+        val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES
+
+        // Use RootService to get packages (bypasses QUERY_ALL_PACKAGES permission on Android 11+)
+        val packages = RootUtils.getPackages(flags).ifEmpty {
+            // Fallback: if RootService is unavailable, use normal PackageManager
+            packageManager.getInstalledPackages(flags)
+        }
+
+        val apps = packages
             .map { packageInfo ->
                 val appLabel = packageInfo.applicationInfo?.getLabel(packageManager) ?: packageInfo.packageName
                 WebUiAppInfo(packageInfo, appLabel)
