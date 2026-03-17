@@ -3,7 +3,11 @@ package io.github.seyud.weave.ui.superuser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -43,7 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import io.github.seyud.weave.core.model.su.SuPolicy
 import io.github.seyud.weave.dialog.SuperuserRevokeDialog
@@ -410,10 +417,11 @@ private fun PolicyList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         overscrollEffect = null
     ) {
-        items(
+        itemsIndexed(
             items = policies,
-            key = { it.key }
-        ) { policyItem ->
+            key = { _, it -> it.key },
+            contentType = { _, _ -> "policy_item" }
+        ) { index, policyItem ->
             val policyKey = policyItem.key
             PolicyItem(
                 item = policyItem,
@@ -422,7 +430,17 @@ private fun PolicyList(
                 onDelete = { onDelete(policyKey) },
                 onUpdateNotify = { viewModel.toggleNotifyByKey(policyKey) },
                 onUpdateLogging = { viewModel.toggleLogByKey(policyKey) },
-                onUpdatePolicy = { policy -> viewModel.updatePolicyByKey(policyKey, policy) }
+                onUpdatePolicy = { policy -> viewModel.updatePolicyByKey(policyKey, policy) },
+                modifier = Modifier
+                    .zIndex(-index.toFloat())
+                    .animateItem(
+                        fadeInSpec = null,
+                        fadeOutSpec = null,
+                        placementSpec = spring(
+                            stiffness = Spring.StiffnessMediumLow,
+                            visibilityThreshold = IntOffset.VisibilityThreshold
+                        )
+                    )
             )
         }
 
@@ -438,10 +456,11 @@ private fun LazyListScope.policyItems(
     onUpdateLogging: (String) -> Unit,
     onUpdatePolicy: (String, Int) -> Unit,
 ) {
-    items(
+    itemsIndexed(
         items = policies,
-        key = { it.key }
-    ) { policyItem ->
+        key = { _, it -> it.key },
+        contentType = { _, _ -> "policy_item" }
+    ) { index, policyItem ->
         val policyKey = policyItem.key
         PolicyItem(
             item = policyItem,
@@ -450,7 +469,8 @@ private fun LazyListScope.policyItems(
             onDelete = { onDelete(policyKey) },
             onUpdateNotify = { onUpdateNotify(policyKey) },
             onUpdateLogging = { onUpdateLogging(policyKey) },
-            onUpdatePolicy = { policy -> onUpdatePolicy(policyKey, policy) }
+            onUpdatePolicy = { policy -> onUpdatePolicy(policyKey, policy) },
+            modifier = Modifier.zIndex(-index.toFloat())
         )
     }
 }

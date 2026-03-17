@@ -2,6 +2,9 @@ package io.github.seyud.weave.ui.deny
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -31,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -51,7 +55,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.asImageBitmap
 
@@ -263,11 +270,11 @@ fun DenyListScreen(
                             }
                         }
                         else -> {
-                            items(
+                            itemsIndexed(
                                 items = displayItems,
-                                key = { it.info.packageName },
-                                contentType = { "denylist_app" },
-                            ) { item ->
+                                key = { _, item -> item.info.packageName },
+                                contentType = { _, _ -> "denylist_app" }
+                            ) { index, item ->
                                 DenyListItem(
                                     item = item,
                                     isExpanded = expandedItems.contains(item.info.packageName),
@@ -284,12 +291,22 @@ fun DenyListScreen(
                                         viewModel.toggleApp(
                                             packageName = item.info.packageName,
                                             includeAllProcesses = true,
-                                            disableIndeterminate = item.toggleState == ToggleableState.Indeterminate,
+                                            disableIndeterminate = item.toggleState == ToggleableState.Indeterminate
                                         )
                                     },
                                     onToggleProcess = { process, enabled ->
-                                        viewModel.toggleProcess(item.info.packageName, process, enabled)
-                                    },
+                                        viewModel.toggleProcess(item.info.packageName, process, enabled) 
+ },
+                                    modifier = Modifier
+                                        .zIndex(-index.toFloat())
+                                        .animateItem(
+                                            fadeInSpec = null,
+                                            fadeOutSpec = null,
+                                            placementSpec = spring(
+                                                stiffness = Spring.StiffnessMediumLow,
+                                                visibilityThreshold = IntOffset.VisibilityThreshold
+                                            )
+                                        )
                                 )
                             }
                         }

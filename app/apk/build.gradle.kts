@@ -1,10 +1,10 @@
 plugins {
     id("com.android.application")
     kotlin("plugin.parcelize")
-    kotlin("plugin.serialization") version "2.3.10"
+    kotlin("plugin.serialization") version "2.3.20"
     id("com.android.legacy-kapt")
     id("androidx.navigation.safeargs.kotlin")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.10"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20"
 }
 
 setupMainApk()
@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.material)
 
     // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2025.03.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.03.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -78,6 +78,20 @@ dependencies {
     implementation(libs.miuix.navigation3.ui)
 
     // Miuix
+    implementation(libs.miuix)
+    implementation(libs.miuix.icons)
+
+    // Haze
+    implementation(libs.haze)
+
+    // Backdrop (Liquid Glass)
+    implementation(libs.backdrop)
+    implementation(libs.capsule)
+
+    // Room
+    kapt(libs.room.compiler)
+    implementation(libs.room.ktx)
+    implementation(libs.room.runtime)
     implementation(libs.miuix)
     implementation(libs.miuix.icons)
 
