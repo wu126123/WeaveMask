@@ -20,7 +20,7 @@
     <string name="not_available">N/A</string>
     <string name="hide">Hide</string>
     <string name="home_package">Package</string>
-    <string name="home_app_title">App</string>
+    <string name="home_app_title">APP</string>
     <string name="home_status_enabled">Yes</string>
     <string name="home_status_disabled">No</string>
     <string name="home_status_supported">Yes</string>

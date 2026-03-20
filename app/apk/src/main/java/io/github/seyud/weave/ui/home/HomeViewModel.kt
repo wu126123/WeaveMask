@@ -22,7 +22,7 @@ import io.github.seyud.weave.core.Config
 import io.github.seyud.weave.core.Info
 import io.github.seyud.weave.core.download.Subject
 import io.github.seyud.weave.core.download.Subject.App
-import io.github.seyud.weave.core.ktx.await
+import io.github.seyud.weave.core.model.UpdateInfo
 import io.github.seyud.weave.core.ktx.toast
 import io.github.seyud.weave.core.repository.NetworkService
 import io.github.seyud.weave.databinding.bindExtra
@@ -32,7 +32,6 @@ import io.github.seyud.weave.dialog.UninstallDialog
 import io.github.seyud.weave.events.SnackbarEvent
 import io.github.seyud.weave.utils.TextHolder
 import io.github.seyud.weave.utils.asText
-import com.topjohnwu.superuser.Shell
 import kotlin.math.roundToInt
 import io.github.seyud.weave.core.R as CoreR
 
@@ -43,6 +42,14 @@ class HomeViewModel(
     enum class State {
         LOADING, INVALID, OUTDATED, UP_TO_DATE
     }
+
+    data class ManagerInstallDialogState(
+        val visible: Boolean = false,
+        val updateInfo: UpdateInfo? = null,
+        val version: String = "",
+        val releaseNotes: String = "",
+        val installEnabled: Boolean = false,
+    )
 
 
 
@@ -86,9 +93,15 @@ class HomeViewModel(
         private set
 
     /**
-     * App 安装说明弹窗是否显示
+     * 首页最近一次成功获取的 APP 更新信息
      */
-    var isManagerInstallDialogVisible by mutableStateOf(false)
+    var managerUpdateSnapshot by mutableStateOf(UpdateInfo())
+        private set
+
+    /**
+     * App 安装说明弹窗状态
+     */
+    var managerInstallDialogState by mutableStateOf(ManagerInstallDialogState())
         private set
 
     val magiskInstalledVersion
@@ -109,12 +122,6 @@ class HomeViewModel(
     val managerInstalledVersion
         get() = "${BuildConfig.APP_VERSION_NAME} (${BuildConfig.APP_VERSION_CODE})" +
             if (BuildConfig.DEBUG) " (D)" else ""
-
-    val managerReleaseNotes
-        get() = Info.update.note
-
-    val canInstallManagerUpdate
-        get() = Info.update.hasValidDownload
 
     /**
      * 应用包名
@@ -138,15 +145,14 @@ class HomeViewModel(
 
     override suspend fun doLoadWork() {
         appState = State.LOADING
-        Info.fetchUpdate(svc)?.takeIf { it.hasValidDownload }?.apply {
+        managerUpdateSnapshot = UpdateInfo()
+        Info.fetchUpdate(svc)?.takeIf { it.hasValidDownload }?.let { updateInfo ->
+            managerUpdateSnapshot = updateInfo
             appState = when {
-                BuildConfig.APP_VERSION_CODE < versionCode -> State.OUTDATED
+                BuildConfig.APP_VERSION_CODE < updateInfo.versionCode -> State.OUTDATED
                 else -> State.UP_TO_DATE
             }
-
-            val isDebug = Config.updateChannel == Config.Value.DEBUG_CHANNEL
-            managerRemoteVersion =
-                ("$version (${versionCode})" + if (isDebug) " (D)" else "").asText()
+            managerRemoteVersion = buildManagerVersion(updateInfo).asText()
         } ?: run {
             appState = State.INVALID
             managerRemoteVersion = CoreR.string.not_available.asText()
@@ -205,17 +211,26 @@ class HomeViewModel(
     fun onManagerPressed() = when (appState) {
         State.LOADING -> SnackbarEvent(CoreR.string.loading).publish()
         State.INVALID -> SnackbarEvent(CoreR.string.no_connection).publish()
-        else -> if (!canInstallManagerUpdate) {
-            SnackbarEvent(CoreR.string.no_connection).publish()
-        } else withExternalRW {
+        else -> withExternalRW {
             withInstallPermission {
-                isManagerInstallDialogVisible = true
+                val updateInfo = managerUpdateSnapshot.takeIf { it.hasValidDownload }
+                if (updateInfo == null) {
+                    SnackbarEvent(CoreR.string.no_connection).publish()
+                    return@withInstallPermission
+                }
+                managerInstallDialogState = ManagerInstallDialogState(
+                    visible = true,
+                    updateInfo = updateInfo,
+                    version = buildManagerVersion(updateInfo),
+                    releaseNotes = buildManagerReleaseNotes(updateInfo),
+                    installEnabled = updateInfo.hasValidDownload
+                )
             }
         }
     }
 
     fun dismissManagerInstallDialog() {
-        isManagerInstallDialogVisible = false
+        managerInstallDialogState = ManagerInstallDialogState()
     }
 
     fun onMagiskPressed() = withExternalRW {
@@ -281,4 +296,17 @@ class HomeViewModel(
             /* Entry point to trigger test events within the app */
         }
     }.publish()
+
+    private fun buildManagerVersion(updateInfo: UpdateInfo): String {
+        val isDebug = Config.updateChannel == Config.Value.DEBUG_CHANNEL
+        return "${updateInfo.version} (${updateInfo.versionCode})" + if (isDebug) " (D)" else ""
+    }
+
+    private fun buildManagerReleaseNotes(updateInfo: UpdateInfo): String {
+        return updateInfo.note.ifBlank {
+            buildManagerVersion(updateInfo).ifBlank {
+                AppContext.getString(CoreR.string.app_changelog)
+            }
+        }
+    }
 }

@@ -69,23 +69,24 @@ internal fun HomeDialogHost(
     )
 
     ManagerInstallDialog(
-        show = viewModel.isManagerInstallDialogVisible,
+        show = viewModel.managerInstallDialogState.visible,
         title = context.getString(CoreR.string.home_app_title),
-        version = viewModel.managerRemoteVersion.getText(context.resources).toString(),
-        releaseNotes = viewModel.managerReleaseNotes,
-        installEnabled = viewModel.canInstallManagerUpdate,
+        version = viewModel.managerInstallDialogState.version,
+        releaseNotes = viewModel.managerInstallDialogState.releaseNotes,
+        installEnabled = viewModel.managerInstallDialogState.installEnabled,
         onDismiss = { viewModel.dismissManagerInstallDialog() },
         onInstall = {
-            if (!viewModel.canInstallManagerUpdate) {
+            val updateInfo = viewModel.managerInstallDialogState.updateInfo
+            if (!viewModel.managerInstallDialogState.installEnabled || updateInfo == null) {
                 context.toast(CoreR.string.no_connection, Toast.LENGTH_SHORT)
                 viewModel.dismissManagerInstallDialog()
                 return@ManagerInstallDialog
             }
             val activity = context as? ComponentActivity
             if (activity is IActivityExtension) {
-                DownloadEngine.startWithActivity(activity, Subject.App())
+                DownloadEngine.startWithActivity(activity, Subject.App(updateInfo))
             } else {
-                DownloadEngine.start(context.applicationContext, Subject.App())
+                DownloadEngine.start(context.applicationContext, Subject.App(updateInfo))
             }
             viewModel.dismissManagerInstallDialog()
         }

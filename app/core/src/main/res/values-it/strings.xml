@@ -18,7 +18,7 @@
     <string name="not_available">N/D</string>
     <string name="hide">Nascondi</string>
     <string name="home_package">Pacchetto</string>
-    <string name="home_app_title">App</string>
+    <string name="home_app_title">APP</string>
 
     <string name="home_notice_content">Scarica Magisk SOLTANTO dalla pagina GitHub ufficiale. I file provenienti da fonti sconosciute possono essere dannosi!</string>
     <string name="home_support_title">Supportaci</string>

@@ -18,7 +18,7 @@
     <string name="not_available">N/A</string>
     <string name="hide">Elrejt</string>
     <string name="home_package">Csomag</string>
-    <string name="home_app_title">App</string>
+    <string name="home_app_title">APP</string>
 
     <string name="home_notice_content">A Magisk-et CSAK a hivatalos GitHub oldalról töltsd le. Az ismeretlen forrásból származó fájlok rosszindulatúak lehetnek!</string>
     <string name="home_support_title">Támogass minket</string>

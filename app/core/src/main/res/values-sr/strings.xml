@@ -19,7 +19,7 @@
     <string name="not_available">N/A</string>
     <string name="hide">Сакриј</string>
     <string name="home_package">Пакет</string>
-    <string name="home_app_title">Апл.</string>
+    <string name="home_app_title">APP</string>
     <string name="home_notice_content">Преузмите Magisk САМО са званичне GitHub странице. Фајлови из непознатих извора могу бити малициозни!</string>
     <string name="home_support_title">Подржите нас</string>
     <string name="home_follow_title">Запратите нас</string>
