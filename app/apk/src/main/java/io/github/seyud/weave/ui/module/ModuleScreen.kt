@@ -11,11 +11,14 @@ import androidx.core.content.edit
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Text
@@ -30,6 +33,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -52,6 +58,7 @@ import io.github.seyud.weave.ui.component.SearchPager
 import io.github.seyud.weave.ui.component.SearchStatus
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
 import io.github.seyud.weave.core.Info
+import io.github.seyud.weave.core.ktx.getBitmap
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.MainActivity
 import io.github.seyud.weave.core.download.DownloadEngine
@@ -70,11 +77,13 @@ import top.yukonga.miuix.kmp.basic.PullToRefresh
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.basic.VerticalScrollBar
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
+import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.SuperListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
@@ -89,6 +98,7 @@ import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Code
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -127,6 +137,9 @@ fun ModuleScreen(
         mutableStateOf(SearchStatus(label = searchModulesLabel))
     }
     val showTopPopup = remember { mutableStateOf(false) }
+    val shortcutState = rememberModuleShortcutState(context)
+    var showShortcutDialog by rememberSaveable { mutableStateOf(false) }
+    var showShortcutTypeDialog by rememberSaveable { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
     val localModulePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -169,9 +182,14 @@ fun ModuleScreen(
                             error.message ?: context.getString(CoreR.string.failure),
                             Toast.LENGTH_LONG
                         ).show()
-                    }
+                }
             }
         }
+    }
+    val shortcutIconPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        shortcutState.updateIconUri(uri?.toString())
     }
     val enableBlur = LocalEnableBlur.current
     val hazeState = remember { HazeState() }
@@ -191,6 +209,20 @@ fun ModuleScreen(
             else -> SearchStatus.ResultStatus.SHOW
         }
     )
+
+    fun onModuleAddShortcut(module: ModuleInfo) {
+        shortcutState.bindModule(module)
+        when (shortcutState.availableTypes.size) {
+            0 -> Unit
+            1 -> {
+                shortcutState.selectType(shortcutState.availableTypes.first())
+                showShortcutDialog = true
+            }
+            else -> {
+                showShortcutTypeDialog = true
+            }
+        }
+    }
 
     // 设置运行模块操作的回调
     DisposableEffect(onRunAction) {
@@ -259,6 +291,33 @@ fun ModuleScreen(
                 onInstallModuleFromLocal(uri)
             }
         )
+        ModuleShortcutTypeDialog(
+            show = showShortcutTypeDialog,
+            shortcutState = shortcutState,
+            onDismiss = { showShortcutTypeDialog = false },
+            onSelectType = { type ->
+                showShortcutTypeDialog = false
+                shortcutState.selectType(type)
+                showShortcutDialog = true
+            }
+        )
+        ModuleShortcutDialog(
+            show = showShortcutDialog,
+            shortcutState = shortcutState,
+            onDismiss = { showShortcutDialog = false },
+            onPickShortcutIcon = { shortcutIconPicker.launch("image/*") },
+            onDeleteShortcut = {
+                shortcutState.deleteShortcut(context)
+                showShortcutDialog = false
+            },
+            onConfirmShortcut = {
+                scope.launch {
+                    if (shortcutState.createShortcut(context)) {
+                        showShortcutDialog = false
+                    }
+                }
+            }
+        )
 
         Scaffold(
             modifier = modifier,
@@ -272,7 +331,8 @@ fun ModuleScreen(
                     moduleItems(
                         modules = uiState.modules,
                         viewModel = viewModel,
-                        onOpenWebUi = onOpenWebUi
+                        onOpenWebUi = onOpenWebUi,
+                        onAddShortcut = ::onModuleAddShortcut,
                     )
                 }
             },
@@ -416,6 +476,7 @@ fun ModuleScreen(
                                         )
                                     },
                                     onOpenWebUi = onOpenWebUi,
+                                    onAddShortcut = ::onModuleAddShortcut,
                                     topContentPadding = innerPadding.calculateTopPadding() + boxHeight.value + 6.dp,
                                     contentBottomPadding = contentBottomPadding,
                                     modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -503,6 +564,7 @@ private fun ModuleList(
     hazeState: HazeState,
     onInstallPressed: () -> Unit,
     onOpenWebUi: (String, String) -> Unit,
+    onAddShortcut: (ModuleInfo) -> Unit,
     topContentPadding: Dp,
     contentBottomPadding: Dp,
     modifier: Modifier = Modifier
@@ -533,7 +595,8 @@ private fun ModuleList(
                 ModuleItem(
                     module = module,
                     viewModel = viewModel,
-                    onOpenWebUi = onOpenWebUi
+                    onOpenWebUi = onOpenWebUi,
+                    onAddShortcut = onAddShortcut,
                 )
             }
         }
@@ -552,6 +615,7 @@ private fun LazyListScope.moduleItems(
     modules: List<ModuleInfo>,
     viewModel: ModuleViewModel,
     onOpenWebUi: (String, String) -> Unit,
+    onAddShortcut: (ModuleInfo) -> Unit,
 ) {
     items(
         items = modules,
@@ -560,8 +624,164 @@ private fun LazyListScope.moduleItems(
         ModuleItem(
             module = module,
             viewModel = viewModel,
-            onOpenWebUi = onOpenWebUi
+            onOpenWebUi = onOpenWebUi,
+            onAddShortcut = onAddShortcut,
         )
+    }
+}
+
+@Composable
+private fun ModuleShortcutTypeDialog(
+    show: Boolean,
+    shortcutState: ModuleShortcutState,
+    onDismiss: () -> Unit,
+    onSelectType: (ShortcutType) -> Unit,
+) {
+    if (!show) return
+
+    SuperDialog(
+        show = show,
+        title = stringResource(CoreR.string.module_shortcut_type_title),
+        onDismissRequest = onDismiss,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (shortcutState.supportsActionShortcut) {
+                TextButton(
+                    text = stringResource(CoreR.string.module_action),
+                    onClick = { onSelectType(ShortcutType.Action) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+            if (shortcutState.supportsWebUiShortcut) {
+                TextButton(
+                    text = stringResource(CoreR.string.module_webui),
+                    onClick = { onSelectType(ShortcutType.WebUI) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+            TextButton(
+                text = stringResource(android.R.string.cancel),
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModuleShortcutDialog(
+    show: Boolean,
+    shortcutState: ModuleShortcutState,
+    onDismiss: () -> Unit,
+    onPickShortcutIcon: () -> Unit,
+    onDeleteShortcut: () -> Unit,
+    onConfirmShortcut: () -> Unit,
+) {
+    if (!show) return
+    val context = LocalContext.current
+    val fallbackIcon = remember(context) {
+        runCatching { context.getBitmap(CoreR.drawable.ic_launcher).asImageBitmap() }.getOrNull()
+    }
+
+    SuperDialog(
+        show = show,
+        title = stringResource(CoreR.string.module_shortcut_title),
+        onDismissRequest = onDismiss,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                val preview = shortcutState.previewIcon
+                if (preview != null) {
+                    Image(
+                        bitmap = preview,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    fallbackIcon?.let { icon ->
+                        Image(
+                            bitmap = icon,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TextButton(
+                    text = stringResource(CoreR.string.module_shortcut_icon_pick),
+                    onClick = onPickShortcutIcon,
+                    modifier = Modifier.weight(1f),
+                )
+                if (shortcutState.iconUri != shortcutState.defaultShortcutIconUri) {
+                    TextButton(
+                        text = stringResource(CoreR.string.module_shortcut_icon_reset),
+                        onClick = shortcutState::resetIconToDefault,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            TextField(
+                value = shortcutState.name,
+                onValueChange = shortcutState::updateName,
+                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(CoreR.string.module_shortcut_name_label),
+                singleLine = true,
+                useLabelAsPlaceholder = true,
+            )
+
+            if (shortcutState.hasExistingShortcut) {
+                TextButton(
+                    text = stringResource(CoreR.string.module_shortcut_delete),
+                    onClick = onDeleteShortcut,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    text = stringResource(
+                        if (shortcutState.hasExistingShortcut) {
+                            CoreR.string.update
+                        } else {
+                            CoreR.string.module_shortcut_add
+                        }
+                    ),
+                    onClick = onConfirmShortcut,
+                    enabled = shortcutState.name.isNotBlank(),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+        }
     }
 }
 
@@ -602,6 +822,7 @@ private fun ModuleItem(
     module: ModuleInfo,
     viewModel: ModuleViewModel,
     onOpenWebUi: (String, String) -> Unit,
+    onAddShortcut: (ModuleInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -766,6 +987,36 @@ private fun ModuleItem(
                         Text(
                             text = context.getString(CoreR.string.module_webui),
                             color = webUiTint,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+
+            if (module.showShortcutButton) {
+                val shortcutBg = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+                val shortcutTint = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                IconButton(
+                    minHeight = 32.dp,
+                    minWidth = 32.dp,
+                    onClick = { onAddShortcut(module) },
+                    backgroundColor = shortcutBg,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = Icons.Rounded.Add,
+                            tint = shortcutTint,
+                            contentDescription = context.getString(CoreR.string.module_shortcut_button)
+                        )
+                        Text(
+                            text = context.getString(CoreR.string.module_shortcut_button),
+                            color = shortcutTint,
                             fontWeight = FontWeight.Medium,
                             fontSize = 14.sp
                         )

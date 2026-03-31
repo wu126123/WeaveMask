@@ -81,10 +81,12 @@ enum class ActionState {
 fun ActionScreen(
     moduleId: String,
     moduleName: String,
+    fromShortcut: Boolean,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val activity = context as? android.app.Activity
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -92,10 +94,18 @@ fun ActionScreen(
     var actionState by remember { mutableStateOf(ActionState.RUNNING) }
     val consoleItems = remember { mutableStateListOf<String>() }
     val logItems = remember { mutableStateListOf<String>() }
+    val exitAction = remember(activity, fromShortcut, onNavigateBack) {
+        {
+            if (fromShortcut && activity != null) {
+                activity.finishAndRemoveTask()
+            } else {
+                onNavigateBack()
+            }
+        }
+    }
 
     // 锁定屏幕方向
     DisposableEffect(Unit) {
-        val activity = context as? android.app.Activity
         val originalOrientation = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
@@ -163,7 +173,7 @@ fun ActionScreen(
                 title = moduleName,
                 navigationIcon = {
                     IconButton(
-                        onClick = onNavigateBack,
+                        onClick = exitAction,
                         enabled = actionState != ActionState.RUNNING
                     ) {
                         Icon(
@@ -261,7 +271,7 @@ fun ActionScreen(
                 exit = fadeOut()
             ) {
                 Button(
-                    onClick = onNavigateBack,
+                    onClick = exitAction,
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(text = context.getString(CoreR.string.close))

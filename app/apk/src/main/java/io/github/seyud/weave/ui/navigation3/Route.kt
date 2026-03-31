@@ -44,5 +44,9 @@ sealed interface Route : NavKey, Parcelable {
     /** 模块操作页面 */
     @Parcelize
     @Serializable
-    data class Action(val moduleId: String, val moduleName: String = "") : Route
+    data class Action(
+        val moduleId: String,
+        val moduleName: String = "",
+        val fromShortcut: Boolean = false,
+    ) : Route
 }

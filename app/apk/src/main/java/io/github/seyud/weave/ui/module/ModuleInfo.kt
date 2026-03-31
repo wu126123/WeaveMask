@@ -29,6 +29,8 @@ data class ModuleInfo(
     val zygiskUnloaded: Boolean,
     val hasAction: Boolean,
     val hasWebUi: Boolean,
+    val actionIconPath: String?,
+    val webUiIconPath: String?,
     val outdated: Boolean,
 ) {
     /**
@@ -39,17 +41,29 @@ data class ModuleInfo(
             (Info.isZygiskEnabled && isRiru) ||
             (!Info.isZygiskEnabled && isZygisk)
 
+    private val hidesActionByNotice: Boolean
+        get() = zygiskUnloaded || (Info.isZygiskEnabled && isRiru)
+
     /**
      * 是否显示 Action 按钮
      */
     val showAction: Boolean
-        get() = hasAction && !showNotice
+        get() = hasAction && !hidesActionByNotice
 
     /**
      * 是否显示 WebUI 按钮
      */
     val showWebUi: Boolean
         get() = hasWebUi && enabled && !removed
+
+    val supportsActionShortcut: Boolean
+        get() = showAction && enabled && !removed && !actionIconPath.isNullOrBlank()
+
+    val supportsWebUiShortcut: Boolean
+        get() = showWebUi && !webUiIconPath.isNullOrBlank()
+
+    val showShortcutButton: Boolean
+        get() = supportsActionShortcut || supportsWebUiShortcut
 
     /**
      * 警告文本
@@ -95,6 +109,8 @@ data class ModuleInfo(
                 zygiskUnloaded = localModule.zygiskUnloaded,
                 hasAction = localModule.hasAction,
                 hasWebUi = localModule.hasWebUi,
+                actionIconPath = localModule.actionIconPath,
+                webUiIconPath = localModule.webUiIconPath,
                 outdated = localModule.outdated,
             )
         }

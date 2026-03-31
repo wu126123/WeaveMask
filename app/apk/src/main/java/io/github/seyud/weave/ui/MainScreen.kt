@@ -1,5 +1,6 @@
 package io.github.seyud.weave.ui
 
+import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.EaseInOut
@@ -91,6 +92,7 @@ import io.github.seyud.weave.ui.install.InstallViewModel
 import io.github.seyud.weave.ui.log.LogScreen
 import io.github.seyud.weave.ui.log.LogViewModel
 import io.github.seyud.weave.ui.module.ActionScreen
+import io.github.seyud.weave.ui.module.ModuleShortcutContract
 import io.github.seyud.weave.ui.module.ModuleScreen
 import io.github.seyud.weave.ui.module.ModuleViewModel
 import io.github.seyud.weave.ui.settings.AppLanguageScreen
@@ -209,6 +211,7 @@ fun MainScreen(
     installViewModel: InstallViewModel,
     settingsViewModel: SettingsViewModel,
     initialMainTab: Int = 0,
+    intentVersion: Int = 0,
     pendingFlashAction: String? = null,
     pendingFlashUri: Uri? = null,
     externalZipUri: Uri? = null,
@@ -284,6 +287,7 @@ fun MainScreen(
         CompositionLocalProvider(
             LocalNavigator provides navigator,
         ) {
+            ShortcutIntentHandler(intentVersion = intentVersion)
             Scaffold(
                 snackbarHost = {
                     SnackbarHost(
@@ -364,6 +368,7 @@ fun MainScreen(
                             ActionScreen(
                                 moduleId = key.moduleId,
                                 moduleName = key.moduleName,
+                                fromShortcut = key.fromShortcut,
                                 onNavigateBack = { navigator.pop() }
                             )
                         }
@@ -371,6 +376,33 @@ fun MainScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ShortcutIntentHandler(
+    intentVersion: Int,
+) {
+    val activity = LocalContext.current as? Activity ?: return
+    val navigator = LocalNavigator.current
+
+    LaunchedEffect(intentVersion) {
+        val intent = activity.intent ?: return@LaunchedEffect
+        val shortcutType = intent.getStringExtra(ModuleShortcutContract.EXTRA_SHORTCUT_TYPE)
+            ?: return@LaunchedEffect
+        if (shortcutType != ModuleShortcutContract.TYPE_ACTION) {
+            return@LaunchedEffect
+        }
+
+        val moduleId = intent.getStringExtra(ModuleShortcutContract.EXTRA_MODULE_ID)
+            ?: return@LaunchedEffect
+        val moduleName = intent.getStringExtra(ModuleShortcutContract.EXTRA_MODULE_NAME).orEmpty()
+
+        intent.removeExtra(ModuleShortcutContract.EXTRA_SHORTCUT_TYPE)
+        intent.removeExtra(ModuleShortcutContract.EXTRA_MODULE_ID)
+        intent.removeExtra(ModuleShortcutContract.EXTRA_MODULE_NAME)
+
+        navigator.push(Route.Action(moduleId, moduleName, fromShortcut = true))
     }
 }
 

@@ -202,6 +202,7 @@ class MainActivity : AppCompatActivity(), SplashScreenHost, IActivityExtension, 
 
         // 设置 Compose 内容
         setContent {
+            val intentVersion by intentState.collectAsStateWithLifecycle()
             var colorMode by remember { mutableIntStateOf(Config.colorMode) }
             var keyColorInt by remember { mutableIntStateOf(Config.keyColor) }
             val keyColor = remember(keyColorInt) {
@@ -272,6 +273,7 @@ class MainActivity : AppCompatActivity(), SplashScreenHost, IActivityExtension, 
                             installViewModel = installViewModel,
                             settingsViewModel = settingsViewModel,
                             initialMainTab = initialMainTab,
+                            intentVersion = intentVersion,
                             pendingFlashAction = pendingFlashAction,
                             pendingFlashUri = pendingFlashUri,
                             externalZipUri = externalZipUri,

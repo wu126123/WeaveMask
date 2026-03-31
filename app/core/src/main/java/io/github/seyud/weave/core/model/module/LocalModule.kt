@@ -25,6 +25,8 @@ data class LocalModule(
     var description: String = ""
     var updateInfo: OnlineModule? = null
     var outdated = false
+    var actionIconPath: String? = null
+    var webUiIconPath: String? = null
     private var updateUrl: String = ""
 
     private val removeFile = base.getChildFile("remove")
@@ -64,6 +66,17 @@ data class LocalModule(
             }
         }
 
+    private fun resolveModuleFilePath(path: String): String? {
+        val normalized = path.trim()
+        if (normalized.isBlank()) {
+            return null
+        }
+        if (normalized.startsWith("/")) {
+            return normalized
+        }
+        return base.getChildFile(normalized).path
+    }
+
     @Throws(NumberFormatException::class)
     private fun parseProps(props: List<String>) {
         for (line in props) {
@@ -84,6 +97,8 @@ data class LocalModule(
                 "author" -> author = value
                 "description" -> description = value
                 "updateJson" -> updateUrl = value
+                "actionIcon" -> actionIconPath = resolveModuleFilePath(value)
+                "webuiIcon" -> webUiIconPath = resolveModuleFilePath(value)
             }
         }
     }
