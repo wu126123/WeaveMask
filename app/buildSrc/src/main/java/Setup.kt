@@ -302,7 +302,7 @@ fun Project.setupMainApk() {
             versionName = Config.version
             versionCode = Config.versionCode
             ndk {
-                abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64", "riscv64")
+                abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
                 debugSymbolLevel = "FULL"
             }
         }
@@ -313,7 +313,7 @@ fun Project.setupMainApk() {
             variant.instrumentation.apply {
                 setAsmFramesComputationMode(COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS)
                 transformClassesWith(
-                    DesugarClassVisitorFactory::class.java, InstrumentationScope.ALL) {}
+                    DesugarClassVisitorFactory::class.java, InstrumentationScope.PROJECT) {}
             }
         }
     }

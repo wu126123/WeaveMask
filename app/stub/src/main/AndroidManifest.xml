@@ -20,10 +20,6 @@
         tools:ignore="MissingApplicationIcon"
         tools:remove="android:appComponentFactory">
 
-        <service
-            android:name="androidx.room.MultiInstanceInvalidationService"
-            tools:node="remove" />
-
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
