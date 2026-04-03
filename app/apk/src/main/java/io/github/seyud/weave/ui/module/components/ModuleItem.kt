@@ -62,6 +62,13 @@ internal fun ModuleItem(
         !module.updated &&
         (!module.showNotice || (!Info.isZygiskEnabled && module.isZygisk))
     val hasDescription = module.description.isNotEmpty()
+    val visibleActionButtonCount = listOf(
+        module.showAction && module.enabled && !module.removed,
+        module.showWebUi,
+        module.showShortcutButton,
+        module.showUpdate,
+    ).count { it }
+    val compactActionButtons = visibleActionButtonCount >= 3
     var expanded by rememberSaveable(module.id) { mutableStateOf(false) }
 
     val textDecoration = if (module.removed) TextDecoration.LineThrough else null
@@ -170,23 +177,32 @@ internal fun ModuleItem(
                     enabled = module.enabled,
                     backgroundColor = secondaryContainer,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
+                    if (compactActionButtons) {
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = MiuixIcons.Play,
                             tint = actionIconTint,
                             contentDescription = context.getString(CoreR.string.module_action),
                         )
-                        Text(
-                            text = context.getString(CoreR.string.module_action),
-                            color = actionIconTint,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = MiuixIcons.Play,
+                                tint = actionIconTint,
+                                contentDescription = context.getString(CoreR.string.module_action),
+                            )
+                            Text(
+                                text = context.getString(CoreR.string.module_action),
+                                color = actionIconTint,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                            )
+                        }
                     }
                 }
             }
@@ -200,23 +216,32 @@ internal fun ModuleItem(
                     onClick = onOpenWebUi,
                     backgroundColor = webUiBg,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
+                    if (compactActionButtons) {
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Rounded.Code,
                             tint = webUiTint,
                             contentDescription = context.getString(CoreR.string.module_webui),
                         )
-                        Text(
-                            text = context.getString(CoreR.string.module_webui),
-                            color = webUiTint,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = Icons.Rounded.Code,
+                                tint = webUiTint,
+                                contentDescription = context.getString(CoreR.string.module_webui),
+                            )
+                            Text(
+                                text = context.getString(CoreR.string.module_webui),
+                                color = webUiTint,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                            )
+                        }
                     }
                 }
             }
@@ -230,23 +255,32 @@ internal fun ModuleItem(
                     onClick = onAddShortcut,
                     backgroundColor = shortcutBg,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
+                    if (compactActionButtons) {
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Rounded.Add,
                             tint = shortcutTint,
                             contentDescription = context.getString(CoreR.string.module_shortcut_button),
                         )
-                        Text(
-                            text = context.getString(CoreR.string.module_shortcut_button),
-                            color = shortcutTint,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = Icons.Rounded.Add,
+                                tint = shortcutTint,
+                                contentDescription = context.getString(CoreR.string.module_shortcut_button),
+                            )
+                            Text(
+                                text = context.getString(CoreR.string.module_shortcut_button),
+                                color = shortcutTint,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                            )
+                        }
                     }
                 }
             }
@@ -263,29 +297,43 @@ internal fun ModuleItem(
                     minWidth = 32.dp,
                     onClick = onDownloadUpdate,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
+                    if (compactActionButtons) {
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = MiuixIcons.UploadCloud,
                             tint = updateTint,
                             contentDescription = context.getString(CoreR.string.update),
                         )
-                        Text(
-                            text = context.getString(CoreR.string.update),
-                            color = updateTint,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = MiuixIcons.UploadCloud,
+                                tint = updateTint,
+                                contentDescription = context.getString(CoreR.string.update),
+                            )
+                            Text(
+                                text = context.getString(CoreR.string.update),
+                                color = updateTint,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                            )
+                        }
                     }
                 }
             }
 
             val secondaryContainer = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
             val actionIconTint = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+            val removeButtonText = if (module.removed) {
+                context.getString(CoreR.string.module_state_restore)
+            } else {
+                context.getString(CoreR.string.module_state_remove)
+            }
             IconButton(
                 minHeight = 32.dp,
                 minWidth = 32.dp,
@@ -310,14 +358,10 @@ internal fun ModuleItem(
                             MiuixIcons.Delete
                         },
                         tint = actionIconTint,
-                        contentDescription = null,
+                        contentDescription = removeButtonText,
                     )
                     Text(
-                        text = if (module.removed) {
-                            context.getString(CoreR.string.module_state_restore)
-                        } else {
-                            context.getString(CoreR.string.module_state_remove)
-                        },
+                        text = removeButtonText,
                         color = actionIconTint,
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
