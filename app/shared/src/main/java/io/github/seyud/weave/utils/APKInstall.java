@@ -15,9 +15,6 @@ import android.content.pm.PackageInstaller.SessionParams;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.core.content.ContextCompat;
-import androidx.core.os.BundleCompat;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilterOutputStream;
@@ -41,12 +38,12 @@ public final class APKInstall {
 
     public static void registerReceiver(
             Context context, BroadcastReceiver receiver, IntentFilter filter) {
-        ContextCompat.registerReceiver(
-                context,
-                receiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-        );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // noinspection InlinedApi
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, filter);
+        }
     }
 
     public static Session startSession(Context context) {
@@ -130,11 +127,12 @@ public final class APKInstall {
         }
 
         private static <T> T getParcelableExtraCompat(Intent intent, String key, Class<T> type) {
-            var extras = intent.getExtras();
-            if (extras == null) {
-                return null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return intent.getParcelableExtra(key, type);
             }
-            return BundleCompat.getParcelable(extras, key, type);
+            @SuppressWarnings("deprecation")
+            T value = intent.getParcelableExtra(key);
+            return value;
         }
 
         private void onSuccess(Context context) {

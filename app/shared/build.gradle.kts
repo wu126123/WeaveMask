@@ -8,7 +8,3 @@ android {
     namespace = "io.github.seyud.shared"
     enableKotlin = false
 }
-
-dependencies {
-    implementation(libs.core.ktx)
-}
