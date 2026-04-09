@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +80,9 @@ import io.github.seyud.weave.ui.util.defaultBarBlur
 import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -434,7 +438,7 @@ private fun ShortcutIntentHandler(
 
 /**
  * 主 Tab 页面
- * 使用 HorizontalPager 实现 Tab 切换，动态 beyondViewportPageCount
+ * 使用 HorizontalPager 实现 Tab 切换，固定 beyondViewportPageCount
  * 导航转场动画完成后才预渲染其他页面（rememberContentReady）
  */
 @Composable
@@ -469,6 +473,7 @@ private fun MainTabScreen(
     val currentPage by remember(pagerState) {
         derivedStateOf { pagerState.currentPage }
     }
+    var lastAppliedTabRequest by remember { mutableIntStateOf(initialMainTab.coerceIn(0, 3)) }
     val isAtMainRoot by remember(navigator) {
         derivedStateOf { navigator.backStack.size == 1 && navigator.current() is Route.Main }
     }
@@ -489,14 +494,27 @@ private fun MainTabScreen(
         }
     )
 
-    // 手势滑动 Pager 后同步选中态到底部栏
-    LaunchedEffect(currentPage) {
-        mainPagerState.syncPage()
-        onCurrentTabChanged(currentPage)
+    // 仅在页面落稳后回传到父层，避免动画过程中的状态回灌。
+    LaunchedEffect(pagerState) {
+        snapshotFlow {
+            if (pagerState.currentPageOffsetFraction == 0f) pagerState.currentPage else null
+        }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { settledPage ->
+                mainPagerState.syncPage()
+                if (settledPage != lastAppliedTabRequest) {
+                    lastAppliedTabRequest = settledPage
+                    onCurrentTabChanged(settledPage)
+                }
+            }
     }
 
     LaunchedEffect(initialMainTab) {
         val targetPage = initialMainTab.coerceIn(0, 3)
+        if (targetPage == lastAppliedTabRequest) return@LaunchedEffect
+
+        lastAppliedTabRequest = targetPage
         if (targetPage != pagerState.currentPage) {
             pagerState.scrollToPage(targetPage)
             mainPagerState.syncPage()
@@ -615,7 +633,7 @@ private fun MainTabScreen(
         ) {
             HorizontalPager(
                 state = pagerState,
-                beyondViewportPageCount = if (contentReady) 3 else 0,
+                beyondViewportPageCount = 1,
                 userScrollEnabled = true,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
