@@ -5,6 +5,8 @@ import android.content.res.Resources
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -77,12 +79,11 @@ import io.github.seyud.weave.core.ktx.toast
 import io.github.seyud.weave.core.utils.LocaleSetting
 import io.github.seyud.weave.core.utils.MediaStoreUtils
 import com.topjohnwu.superuser.Shell
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import io.github.seyud.weave.ui.util.defaultHazeEffect
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import io.github.seyud.weave.ui.util.barBlurContainerColor
+import io.github.seyud.weave.ui.util.defaultBarBlur
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -129,15 +130,8 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = MiuixScrollBehavior()
     val enableBlur = LocalEnableBlur.current
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = colorScheme.surface,
-            tint = HazeTint(colorScheme.surface.copy(0.8f))
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
+    val surfaceColor = colorScheme.surface
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, surfaceColor)
 
     LaunchedEffect(onNavigateToLog, onNavigateToDenyListConfig) {
         viewModel.onNavigateToLog = onNavigateToLog
@@ -177,27 +171,29 @@ fun SettingsScreen(
         contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
         topBar = {
             TopAppBar(
-                modifier = if (enableBlur) {
-                    Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                } else Modifier,
-                color = if (enableBlur) Color.Transparent else colorScheme.surface,
+                modifier = Modifier.defaultBarBlur(blurBackdrop, surfaceColor),
+                color = barBlurContainerColor(blurBackdrop, surfaceColor),
                 title = stringResource(CoreR.string.settings),
                 scrollBehavior = scrollBehavior
             )
         },
         popupHost = { }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
-                .fillMaxHeight()
-                .scrollEndHaptic()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .then(if (enableBlur) Modifier.hazeSource(state = hazeState) else Modifier)
-                .padding(horizontal = 12.dp),
-            contentPadding = innerPadding,
-            overscrollEffect = null
+                .fillMaxSize()
+                .attachBarBlurBackdrop(blurBackdrop),
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .scrollEndHaptic()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .padding(horizontal = 12.dp),
+                contentPadding = innerPadding,
+                overscrollEffect = null
+            ) {
             // ==================== 日志入口 ====================
             item {
                 Card(
@@ -324,7 +320,7 @@ fun SettingsScreen(
                     }
 
                     // 模糊
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         SwitchPreference(
                             title = stringResource(CoreR.string.settings_enable_blur),
                             summary = stringResource(CoreR.string.settings_enable_blur_summary),
@@ -864,6 +860,7 @@ fun SettingsScreen(
             // 底部留白
             item {
                 Spacer(Modifier.height(contentBottomPadding))
+            }
             }
         }
     }

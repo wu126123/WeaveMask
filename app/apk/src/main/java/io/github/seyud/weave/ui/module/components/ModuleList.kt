@@ -15,9 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
 import io.github.seyud.weave.ui.module.ModuleInfo
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.VerticalScrollBar
 import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
@@ -28,8 +28,7 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 @OptIn(ExperimentalScrollBarApi::class)
 internal fun ModuleList(
     modules: List<ModuleInfo>,
-    enableBlur: Boolean,
-    hazeState: HazeState,
+    blurBackdrop: LayerBackdrop?,
     onInstallPressed: () -> Unit,
     onToggleModule: (ModuleInfo, Boolean) -> Unit,
     onRunAction: (ModuleInfo) -> Unit,
@@ -50,8 +49,7 @@ internal fun ModuleList(
                 .fillMaxSize()
                 .scrollEndHaptic()
                 .overScrollVertical()
-                .padding(horizontal = 16.dp)
-                .then(if (enableBlur) Modifier.hazeSource(state = hazeState) else Modifier),
+                .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(top = topContentPadding, bottom = contentBottomPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             overscrollEffect = null,

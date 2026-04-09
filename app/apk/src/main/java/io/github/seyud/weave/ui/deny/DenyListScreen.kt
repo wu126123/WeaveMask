@@ -46,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.platform.LocalContext
@@ -63,12 +62,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import io.github.seyud.weave.ui.util.defaultHazeEffect
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import io.github.seyud.weave.ui.util.barBlurContainerColor
+import io.github.seyud.weave.ui.util.defaultBarBlur
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import io.github.seyud.weave.utils.AppIconCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -133,15 +131,8 @@ fun DenyListScreen(
     }
 
     val enableBlur = LocalEnableBlur.current
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = MiuixTheme.colorScheme.surface,
-            tint = HazeTint(MiuixTheme.colorScheme.surface.copy(alpha = 0.84f)),
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, surfaceColor)
     val scrollBehavior = MiuixScrollBehavior()
     val displayItems = remember(items, stableOrder) {
         val fallbackOrder = buildStableOrder(items)
@@ -155,12 +146,8 @@ fun DenyListScreen(
         contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
         topBar = {
             TopAppBar(
-                modifier = if (enableBlur) {
-                    Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                } else {
-                    Modifier
-                },
-                color = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface,
+                modifier = Modifier.defaultBarBlur(blurBackdrop, surfaceColor),
+                color = barBlurContainerColor(blurBackdrop, surfaceColor),
                 title = context.getString(CoreR.string.denylist),
                 largeTitle = context.getString(CoreR.string.denylist),
                 scrollBehavior = scrollBehavior,
@@ -226,15 +213,18 @@ fun DenyListScreen(
             )
         },
         content = { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .attachBarBlurBackdrop(blurBackdrop),
+            ) {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
                         .nestedScroll(scrollBehavior.nestedScrollConnection)
                         .scrollEndHaptic()
-                        .overScrollVertical()
-                        .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier),
+                        .overScrollVertical(),
                     contentPadding = paddingValues,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     overscrollEffect = null,

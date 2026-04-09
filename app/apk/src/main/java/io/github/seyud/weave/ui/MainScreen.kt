@@ -37,7 +37,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,6 +73,10 @@ import io.github.seyud.weave.ui.navigation3.rememberNavigator
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
 import io.github.seyud.weave.ui.theme.LocalEnableFloatingBottomBar
 import io.github.seyud.weave.ui.theme.LocalEnableFloatingBottomBarBlur
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import io.github.seyud.weave.ui.util.barBlurContainerColor
+import io.github.seyud.weave.ui.util.defaultBarBlur
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
@@ -104,11 +107,6 @@ import io.github.seyud.weave.ui.settings.SettingsViewModel
 import io.github.seyud.weave.ui.superuser.SuperuserScreen
 import io.github.seyud.weave.ui.superuser.SuperuserViewModel
 import io.github.seyud.weave.ui.deny.DenyListScreen
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import io.github.seyud.weave.ui.util.defaultHazeEffect
 import io.github.seyud.weave.ui.util.rememberContentReady
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.NavigationBar
@@ -456,17 +454,8 @@ private fun MainTabScreen(
     val enableFloatingBottomBar = LocalEnableFloatingBottomBar.current
     val enableFloatingBottomBarBlur = LocalEnableFloatingBottomBarBlur.current
 
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = MiuixTheme.colorScheme.surface,
-            tint = HazeTint(MiuixTheme.colorScheme.surface.copy(0.8f))
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
-
     val surfaceColor = MiuixTheme.colorScheme.surface
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, surfaceColor)
     val backdrop = rememberLayerBackdrop {
         drawRect(surfaceColor)
         drawContent()
@@ -585,10 +574,8 @@ private fun MainTabScreen(
                 }
             } else {
                 NavigationBar(
-                    modifier = if (enableBlur) {
-                        Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                    } else Modifier,
-                    color = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface,
+                    modifier = Modifier.defaultBarBlur(blurBackdrop, surfaceColor),
+                    color = barBlurContainerColor(blurBackdrop, surfaceColor),
                     content = {
                         destinations.forEachIndexed { index, destination ->
                             val enabled = when (index) {
@@ -616,68 +603,72 @@ private fun MainTabScreen(
         }
         val contentBottomPadding = paddingValues.calculateBottomPadding() + MainTabContentBottomSpacing
 
-        HorizontalPager(
-            state = pagerState,
-            beyondViewportPageCount = if (contentReady) 3 else 0,
-            userScrollEnabled = true,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (enableBlur) Modifier.hazeSource(state = hazeState) else Modifier)
+                .attachBarBlurBackdrop(blurBackdrop)
                 .then(
                     if (enableFloatingBottomBar && enableBlur)
                         Modifier.layerBackdrop(backdrop)
                     else Modifier
-                )
-        ) { page ->
-            val isCurrentPage = page == currentPage
-            when (page) {
-                0 -> if (isCurrentPage || contentReady) HomeScreen(
-                    viewModel = homeViewModel,
-                    contentBottomPadding = contentBottomPadding,
-                    onNavigateToInstall = {
-                        navigator.push(Route.Install)
-                    },
-                    onNavigateToUninstall = {
-                        navigator.push(Route.Flash(Const.Value.UNINSTALL))
-                    }
-                )
-                1 -> if (isCurrentPage || contentReady) SuperuserScreen(
-                    viewModel = superuserViewModel,
-                    contentBottomPadding = contentBottomPadding
-                )
-                2 -> if (isCurrentPage || contentReady) ModuleScreen(
-                    viewModel = moduleViewModel,
-                    contentBottomPadding = contentBottomPadding,
-                    onInstallModuleFromLocal = { uris ->
-                        if (uris.isNotEmpty()) {
-                            navigator.push(Route.Flash(Const.Value.FLASH_ZIP, uris.map(Uri::toString)))
+                ),
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = if (contentReady) 3 else 0,
+                userScrollEnabled = true,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                val isCurrentPage = page == currentPage
+                when (page) {
+                    0 -> if (isCurrentPage || contentReady) HomeScreen(
+                        viewModel = homeViewModel,
+                        contentBottomPadding = contentBottomPadding,
+                        onNavigateToInstall = {
+                            navigator.push(Route.Install)
+                        },
+                        onNavigateToUninstall = {
+                            navigator.push(Route.Flash(Const.Value.UNINSTALL))
                         }
-                    },
-                    onRunAction = { id, name ->
-                        navigator.push(Route.Action(id, name))
-                    },
-                    onOpenWebUi = { id, name ->
-                        context.startActivity(
-                            context.intent<io.github.seyud.weave.ui.webui.WebUIActivity>()
-                                .putExtra("id", id)
-                                .putExtra("name", name)
-                        )
-                    }
-                )
-                3 -> if (isCurrentPage || contentReady) SettingsScreen(
-                    viewModel = settingsViewModel,
-                    contentBottomPadding = contentBottomPadding,
-                    onNavigateToLog = {
-                        navigator.push(Route.Log)
-                    },
-                    onNavigateToAppLanguage = {
-                        onCurrentTabChanged(3)
-                        navigator.push(Route.AppLanguage)
-                    },
-                    onNavigateToDenyListConfig = {
-                        navigator.push(Route.Deny)
-                    }
-                )
+                    )
+                    1 -> if (isCurrentPage || contentReady) SuperuserScreen(
+                        viewModel = superuserViewModel,
+                        contentBottomPadding = contentBottomPadding
+                    )
+                    2 -> if (isCurrentPage || contentReady) ModuleScreen(
+                        viewModel = moduleViewModel,
+                        contentBottomPadding = contentBottomPadding,
+                        onInstallModuleFromLocal = { uris ->
+                            if (uris.isNotEmpty()) {
+                                navigator.push(Route.Flash(Const.Value.FLASH_ZIP, uris.map(Uri::toString)))
+                            }
+                        },
+                        onRunAction = { id, name ->
+                            navigator.push(Route.Action(id, name))
+                        },
+                        onOpenWebUi = { id, name ->
+                            context.startActivity(
+                                context.intent<io.github.seyud.weave.ui.webui.WebUIActivity>()
+                                    .putExtra("id", id)
+                                    .putExtra("name", name)
+                            )
+                        }
+                    )
+                    3 -> if (isCurrentPage || contentReady) SettingsScreen(
+                        viewModel = settingsViewModel,
+                        contentBottomPadding = contentBottomPadding,
+                        onNavigateToLog = {
+                            navigator.push(Route.Log)
+                        },
+                        onNavigateToAppLanguage = {
+                            onCurrentTabChanged(3)
+                            navigator.push(Route.AppLanguage)
+                        },
+                        onNavigateToDenyListConfig = {
+                            navigator.push(Route.Deny)
+                        }
+                    )
+                }
             }
         }
     }

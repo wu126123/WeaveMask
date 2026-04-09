@@ -10,14 +10,10 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.MainActivity
 import io.github.seyud.weave.ui.component.SearchStatus
@@ -30,6 +26,7 @@ import io.github.seyud.weave.ui.module.state.rememberModuleScreenLocalState
 import io.github.seyud.weave.ui.module.state.rememberModuleSortPreferences
 import io.github.seyud.weave.ui.module.state.rememberShortcutIconPicker
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -57,15 +54,7 @@ fun ModuleScreen(
         onIconPicked = shortcutState::updateIconUri,
     )
     val enableBlur = LocalEnableBlur.current
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = MiuixTheme.colorScheme.surface,
-            tint = HazeTint(MiuixTheme.colorScheme.surface.copy(alpha = 0.8f)),
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, MiuixTheme.colorScheme.surface)
     val scrollBehavior = MiuixScrollBehavior()
     val uiSearchStatus = localState.searchStatus.copy(
         resultStatus = when {
@@ -163,9 +152,7 @@ fun ModuleScreen(
                 ModuleScreenTopBar(
                     uiSearchStatus = uiSearchStatus,
                     uiState = uiState,
-                    enableBlur = enableBlur,
-                    hazeState = hazeState,
-                    hazeStyle = hazeStyle,
+                    blurBackdrop = blurBackdrop,
                     scrollBehavior = scrollBehavior,
                     showTopPopup = localState.showTopPopup,
                     onShowTopPopupChange = { localState.showTopPopup = it },
@@ -186,9 +173,7 @@ fun ModuleScreen(
                     uiState = uiState,
                     uiSearchStatus = uiSearchStatus,
                     contentBottomPadding = contentBottomPadding,
-                    enableBlur = enableBlur,
-                    hazeState = hazeState,
-                    hazeStyle = hazeStyle,
+                    blurBackdrop = blurBackdrop,
                     scrollBehavior = scrollBehavior,
                     onSearchStatusChange = { localState.searchStatus = it },
                     onRefresh = viewModel::refresh,

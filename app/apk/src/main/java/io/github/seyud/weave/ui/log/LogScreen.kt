@@ -53,15 +53,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import io.github.seyud.weave.ui.util.defaultHazeEffect
 import io.github.seyud.weave.core.model.su.SuLog
 import io.github.seyud.weave.core.ktx.timeDateFormat
 import io.github.seyud.weave.core.ktx.toTime
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import io.github.seyud.weave.ui.util.barBlurContainerColor
+import io.github.seyud.weave.ui.util.defaultBarBlur
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
@@ -103,15 +103,8 @@ fun LogScreen(
     val suLogs = viewModel.itemsState
     val magiskLogs = viewModel.magiskLogEntriesState
     val enableBlur = LocalEnableBlur.current
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = MiuixTheme.colorScheme.surface,
-            tint = HazeTint(MiuixTheme.colorScheme.surface.copy(alpha = 0.8f)),
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, surfaceColor)
 
     LaunchedEffect(Unit) {
         viewModel.startLoading()
@@ -125,15 +118,11 @@ fun LogScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                modifier = if (enableBlur) {
-                    Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                } else {
-                    Modifier
-                },
+                modifier = Modifier.defaultBarBlur(blurBackdrop, surfaceColor),
                 title = context.getString(CoreR.string.logs),
                 titleColor = MiuixTheme.colorScheme.onBackground,
                 largeTitleColor = MiuixTheme.colorScheme.onBackground,
-                color = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface,
+                color = barBlurContainerColor(blurBackdrop, surfaceColor),
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateBack,
@@ -187,13 +176,7 @@ fun LogScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .then(
-                        if (enableBlur) {
-                            Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                        } else {
-                            Modifier.background(MiuixTheme.colorScheme.surface)
-                        },
-                    )
+                    .defaultBarBlur(blurBackdrop, surfaceColor)
                     .zIndex(1f)
                     .padding(
                         top = tabRowTopPadding + 12.dp,
@@ -213,7 +196,7 @@ fun LogScreen(
                         }
                     },
                     colors = TabRowDefaults.tabRowColors(
-                        backgroundColor = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface
+                        backgroundColor = barBlurContainerColor(blurBackdrop, surfaceColor)
                     ),
                     height = tabRowHeight,
                 )
@@ -221,7 +204,9 @@ fun LogScreen(
 
             if (loading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .attachBarBlurBackdrop(blurBackdrop),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
@@ -229,15 +214,16 @@ fun LogScreen(
             } else {
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .attachBarBlurBackdrop(blurBackdrop),
                     userScrollEnabled = true,
                 ) { page ->
                     when (page) {
                         0 -> MagiskLogTab(
                             entries = magiskLogs,
                             scrollBehavior = scrollBehavior,
-                            enableBlur = enableBlur,
-                            hazeState = hazeState,
+                            blurBackdrop = blurBackdrop,
                             topPadding = tabRowContentPadding,
                             bottomPadding = contentBottomPadding,
                             startPadding = contentStartPadding,
@@ -246,8 +232,7 @@ fun LogScreen(
                         else -> SuLogTab(
                             suLogs = suLogs,
                             scrollBehavior = scrollBehavior,
-                            enableBlur = enableBlur,
-                            hazeState = hazeState,
+                            blurBackdrop = blurBackdrop,
                             topPadding = tabRowContentPadding,
                             bottomPadding = contentBottomPadding,
                             startPadding = contentStartPadding,
@@ -265,8 +250,7 @@ fun LogScreen(
 private fun SuLogTab(
     suLogs: List<SuLog>,
     scrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
-    enableBlur: Boolean,
-    hazeState: HazeState,
+    blurBackdrop: LayerBackdrop?,
     topPadding: androidx.compose.ui.unit.Dp,
     bottomPadding: androidx.compose.ui.unit.Dp,
     startPadding: androidx.compose.ui.unit.Dp,
@@ -287,8 +271,7 @@ private fun SuLogTab(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .padding(start = startPadding, end = endPadding)
-                .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier),
+                .padding(start = startPadding, end = endPadding),
             contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -407,8 +390,7 @@ private fun SuLogCard(log: SuLog) {
 private fun MagiskLogTab(
     entries: List<MagiskLogEntry>,
     scrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
-    enableBlur: Boolean,
-    hazeState: HazeState,
+    blurBackdrop: LayerBackdrop?,
     topPadding: androidx.compose.ui.unit.Dp,
     bottomPadding: androidx.compose.ui.unit.Dp,
     startPadding: androidx.compose.ui.unit.Dp,
@@ -429,8 +411,7 @@ private fun MagiskLogTab(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .padding(start = startPadding, end = endPadding)
-                .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier),
+                .padding(start = startPadding, end = endPadding),
             contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {

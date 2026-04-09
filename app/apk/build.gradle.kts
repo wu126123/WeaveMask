@@ -58,9 +58,7 @@ dependencies {
     implementation(libs.miuix.ui)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.icons)
-
-    // Haze
-    implementation(libs.haze)
+    implementation(libs.miuix.blur)
 
     // Backdrop (Liquid Glass)
     implementation(libs.backdrop)

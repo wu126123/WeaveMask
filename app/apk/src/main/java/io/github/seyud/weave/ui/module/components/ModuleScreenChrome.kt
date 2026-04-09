@@ -4,19 +4,18 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.component.SearchPager
 import io.github.seyud.weave.ui.component.SearchStatus
 import io.github.seyud.weave.ui.module.ModuleInfo
 import io.github.seyud.weave.ui.module.ModuleUiState
 import io.github.seyud.weave.ui.module.RebootListPopup
+import io.github.seyud.weave.ui.util.barBlurContainerColor
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -65,9 +64,7 @@ internal fun ModuleSearchResultsHost(
 internal fun ModuleScreenTopBar(
     uiSearchStatus: SearchStatus,
     uiState: ModuleUiState,
-    enableBlur: Boolean,
-    hazeState: HazeState,
-    hazeStyle: HazeStyle,
+    blurBackdrop: LayerBackdrop?,
     scrollBehavior: ScrollBehavior,
     showTopPopup: Boolean,
     onShowTopPopupChange: (Boolean) -> Unit,
@@ -78,11 +75,10 @@ internal fun ModuleScreenTopBar(
     val context = LocalContext.current
 
     uiSearchStatus.TopAppBarAnim(
-        hazeState = if (enableBlur) hazeState else null,
-        hazeStyle = if (enableBlur) hazeStyle else null,
+        blurBackdrop = blurBackdrop,
     ) {
         TopAppBar(
-            color = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface,
+            color = barBlurContainerColor(blurBackdrop, MiuixTheme.colorScheme.surface),
             title = context.getString(CoreR.string.modules),
             titleColor = MiuixTheme.colorScheme.onBackground,
             largeTitleColor = MiuixTheme.colorScheme.onBackground,

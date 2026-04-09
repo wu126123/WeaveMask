@@ -54,15 +54,14 @@ import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import io.github.seyud.weave.core.model.su.SuPolicy
 import io.github.seyud.weave.dialog.SuperuserRevokeDialog
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
 import io.github.seyud.weave.ui.component.SearchBox
 import io.github.seyud.weave.ui.component.SearchPager
 import io.github.seyud.weave.ui.component.SearchStatus
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import io.github.seyud.weave.ui.util.rememberBarBlurBackdrop
 import io.github.seyud.weave.core.R as CoreR
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -121,15 +120,7 @@ fun SuperuserScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val scrollBehavior = MiuixScrollBehavior()
     val enableBlur = LocalEnableBlur.current
-    val hazeState = remember { HazeState() }
-    val hazeStyle = if (enableBlur) {
-        HazeStyle(
-            backgroundColor = MiuixTheme.colorScheme.surface,
-            tint = HazeTint(MiuixTheme.colorScheme.surface.copy(0.8f))
-        )
-    } else {
-        HazeStyle.Unspecified
-    }
+    val blurBackdrop = rememberBarBlurBackdrop(enableBlur, MiuixTheme.colorScheme.surface)
     val uiSearchStatus = searchStatus.copy(
         resultStatus = when {
             uiState.isLoading -> SearchStatus.ResultStatus.LOAD
@@ -215,11 +206,10 @@ fun SuperuserScreen(
             contentWindowInsets = WindowInsets.systemBars.add(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
             topBar = {
                 uiSearchStatus.TopAppBarAnim(
-                    hazeState = if (enableBlur) hazeState else null,
-                    hazeStyle = if (enableBlur) hazeStyle else null,
+                    blurBackdrop = blurBackdrop,
                 ) {
                     TopAppBar(
-                        color = if (enableBlur) Color.Transparent else MiuixTheme.colorScheme.surface,
+                        color = if (blurBackdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface,
                         title = context.getString(CoreR.string.superuser),
                         titleColor = MiuixTheme.colorScheme.onBackground,
                         largeTitleColor = MiuixTheme.colorScheme.onBackground,
@@ -273,11 +263,12 @@ fun SuperuserScreen(
                         start = innerPadding.calculateStartPadding(layoutDirection),
                         end = innerPadding.calculateEndPadding(layoutDirection)
                     ),
-                    hazeState = if (enableBlur) hazeState else null,
-                    hazeStyle = if (enableBlur) hazeStyle else null
+                    blurBackdrop = blurBackdrop
                 ) { boxHeight ->
                     PullToRefresh(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .attachBarBlurBackdrop(blurBackdrop),
                         isRefreshing = uiState.isRefreshing,
                         pullToRefreshState = pullToRefreshState,
                         contentPadding = PaddingValues(top = innerPadding.calculateTopPadding() + boxHeight.value + 6.dp),
@@ -319,8 +310,7 @@ fun SuperuserScreen(
                                 PolicyList(
                                     policies = uiState.policies,
                                     viewModel = viewModel,
-                                    enableBlur = enableBlur,
-                                    hazeState = hazeState,
+                                    blurBackdrop = blurBackdrop,
                                     contentBottomPadding = contentBottomPadding,
                                     topContentPadding = innerPadding.calculateTopPadding() + boxHeight.value + 6.dp,
                                     expandedPolicyKeys = expandedPolicyKeys,
@@ -400,15 +390,14 @@ private fun EmptyContent(
  * @param contentBottomPadding 主页面内容底部留白
  * @param onDelete 删除回调
  * @param nestedScrollConnection 嵌套滚动连接
- * @param hazeState Haze 模糊状态
+ * @param blurBackdrop 栏位模糊背景
  */
 @Composable
 @OptIn(ExperimentalScrollBarApi::class)
 private fun PolicyList(
     policies: List<PolicyCardUiState>,
     viewModel: SuperuserViewModel,
-    enableBlur: Boolean,
-    hazeState: HazeState,
+    blurBackdrop: LayerBackdrop?,
     contentBottomPadding: Dp,
     topContentPadding: Dp,
     expandedPolicyKeys: List<String>,
@@ -426,7 +415,6 @@ private fun PolicyList(
                 .scrollEndHaptic()
                 .overScrollVertical()
                 .padding(horizontal = 16.dp)
-                .then(if (enableBlur) Modifier.hazeSource(state = hazeState) else Modifier)
                 .nestedScroll(nestedScrollConnection),
             contentPadding = PaddingValues(top = topContentPadding, bottom = contentBottomPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -68,11 +69,10 @@ import androidx.compose.ui.zIndex
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import io.github.seyud.weave.ui.util.defaultHazeEffect
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
+import io.github.seyud.weave.ui.util.defaultBarBlur
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.Text
@@ -108,8 +108,7 @@ data class SearchStatus(
     fun TopAppBarAnim(
         modifier: Modifier = Modifier,
         visible: Boolean = shouldCollapsed(),
-        hazeState: HazeState? = null,
-        hazeStyle: HazeStyle? = null,
+        blurBackdrop: LayerBackdrop? = null,
         content: @Composable () -> Unit
     ) {
         val surfaceColor = colorScheme.surface
@@ -119,13 +118,7 @@ data class SearchStatus(
             label = "TopAppBarAlpha"
         )
         Box(
-            modifier = modifier.then(
-                if (hazeState != null && hazeStyle != null) {
-                    Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                } else {
-                    Modifier.drawBehind { drawRect(surfaceColor) }
-                }
-            )
+            modifier = modifier.then(Modifier.defaultBarBlur(blurBackdrop, surfaceColor))
         ) {
             Box(
                 modifier = Modifier
@@ -149,8 +142,7 @@ fun SearchStatus.SearchBox(
     },
     searchBarTopPadding: Dp = 12.dp,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    hazeState: HazeState? = null,
-    hazeStyle: HazeStyle? = null,
+    blurBackdrop: LayerBackdrop? = null,
     content: @Composable (MutableState<Dp>) -> Unit
 ) {
     val searchStatus = this
@@ -187,11 +179,7 @@ fun SearchStatus.SearchBox(
                 }
             }
             .then(
-                if (hazeState != null && hazeStyle != null) {
-                    Modifier.defaultHazeEffect(hazeState, hazeStyle)
-                } else {
-                    Modifier.drawBehind { drawRect(surfaceColor) }
-                }
+                Modifier.defaultBarBlur(blurBackdrop, surfaceColor)
             )
     ) {
         collapseBar(searchStatus, searchBarTopPadding, contentPadding)

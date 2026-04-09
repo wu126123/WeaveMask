@@ -10,13 +10,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.component.SearchBox
 import io.github.seyud.weave.ui.component.SearchStatus
 import io.github.seyud.weave.ui.module.ModuleInfo
 import io.github.seyud.weave.ui.module.ModuleUiState
+import io.github.seyud.weave.ui.util.attachBarBlurBackdrop
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
@@ -35,9 +35,7 @@ internal fun ModuleScreenContent(
     uiState: ModuleUiState,
     uiSearchStatus: SearchStatus,
     contentBottomPadding: Dp,
-    enableBlur: Boolean,
-    hazeState: HazeState,
-    hazeStyle: HazeStyle,
+    blurBackdrop: LayerBackdrop?,
     scrollBehavior: ScrollBehavior,
     onSearchStatusChange: (SearchStatus) -> Unit,
     onRefresh: () -> Unit,
@@ -60,11 +58,12 @@ internal fun ModuleScreenContent(
             start = innerPadding.calculateStartPadding(layoutDirection),
             end = innerPadding.calculateEndPadding(layoutDirection),
         ),
-        hazeState = if (enableBlur) hazeState else null,
-        hazeStyle = if (enableBlur) hazeStyle else null,
+        blurBackdrop = blurBackdrop,
     ) { boxHeight ->
         PullToRefresh(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .attachBarBlurBackdrop(blurBackdrop),
             isRefreshing = uiState.isRefreshing,
             pullToRefreshState = pullToRefreshState,
             contentPadding = PaddingValues(
@@ -110,8 +109,7 @@ internal fun ModuleScreenContent(
                 else -> {
                     ModuleList(
                         modules = uiState.modules,
-                        enableBlur = enableBlur,
-                        hazeState = hazeState,
+                        blurBackdrop = blurBackdrop,
                         onInstallPressed = onInstallPressed,
                         onToggleModule = onToggleModule,
                         onRunAction = onRunAction,
