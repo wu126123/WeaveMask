@@ -33,6 +33,11 @@
     <string name="home_support_content">Magisk is, and always will be, free, and open source. However, you can show us that you care by making a donation.</string>
     <string name="home_installed_version">Installed</string>
     <string name="home_latest_version">Latest</string>
+    <string name="home_manager_version">Manager version</string>
+    <string name="home_manager_package">Manager package</string>
+    <string name="home_system_version">System version</string>
+    <string name="home_zygisk_implementation">Zygisk implementation</string>
+    <string name="home_ramdisk_feature">Ramdisk feature</string>
     <string name="invalid_update_channel">Invalid update channel</string>
     <string name="uninstall_magisk_title">Uninstall Magisk</string>
     <string name="uninstall_magisk_msg">All modules will be disabled/removed!\nRoot will be removed!\nAny internal storage unencrypted through the use of Magisk will be re-encrypted!</string>
@@ -160,6 +165,10 @@
     <string name="settings_theme_mode_monet_system">Monet (Follow system)</string>
     <string name="settings_theme_mode_monet_light">Monet (Light)</string>
     <string name="settings_theme_mode_monet_dark">Monet (Dark)</string>
+    <string name="settings_home_layout">Home layout</string>
+    <string name="settings_home_layout_summary">Choose the layout style used on the home page</string>
+    <string name="settings_home_layout_classic">Classic</string>
+    <string name="settings_home_layout_weavsk">Weavsk</string>
     <string name="settings_key_color">Seed color</string>
     <string name="settings_key_color_summary">Choose seed color for Monet theme</string>
     <string name="settings_key_color_default">Default (Wallpaper)</string>

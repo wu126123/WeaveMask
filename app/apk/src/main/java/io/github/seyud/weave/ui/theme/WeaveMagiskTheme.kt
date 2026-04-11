@@ -12,6 +12,7 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 val LocalEnableBlur = staticCompositionLocalOf { false }
 val LocalEnableFloatingBottomBar = staticCompositionLocalOf { false }
 val LocalEnableFloatingBottomBarBlur = staticCompositionLocalOf { false }
+val LocalHomeLayoutMode = staticCompositionLocalOf { 0 }
 val LocalIsMonetTheme = staticCompositionLocalOf { false }
 
 /**

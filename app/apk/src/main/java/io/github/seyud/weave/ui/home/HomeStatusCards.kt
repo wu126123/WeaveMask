@@ -1,20 +1,22 @@
 package io.github.seyud.weave.ui.home
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.res.painterResource
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -24,6 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import io.github.seyud.weave.R
 import io.github.seyud.weave.core.R as CoreR
 import io.github.seyud.weave.ui.theme.LocalIsMonetTheme
+import androidx.compose.ui.res.painterResource
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -52,6 +59,8 @@ import top.yukonga.miuix.kmp.icon.extended.Pin
 import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import top.yukonga.miuix.kmp.utils.TiltFeedback
+import top.yukonga.miuix.kmp.utils.pressable
 
 @Composable
 internal fun NoticeCard(
@@ -62,7 +71,12 @@ internal fun NoticeCard(
     Card(
         modifier = Modifier
             .padding(top = 12.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .pressable(
+                interactionSource = null,
+                indication = TiltFeedback(),
+                delay = null
+            ),
         colors = CardDefaults.defaultColors(
             color = MiuixTheme.colorScheme.primary,
             contentColor = MiuixTheme.colorScheme.onPrimary
@@ -93,149 +107,7 @@ internal fun NoticeCard(
 }
 
 @Composable
-internal fun MagiskCard(
-    magiskState: HomeViewModel.State,
-    installedVersion: String,
-    expanded: Boolean,
-    onCardClick: () -> Unit,
-    onInstallClick: () -> Unit,
-) {
-    val context = LocalContext.current
-    val isMonetTheme = LocalIsMonetTheme.current
-    val isInteractive = magiskState != HomeViewModel.State.LOADING
-    val accentColor = if (isMonetTheme) {
-        MiuixTheme.colorScheme.primary
-    } else {
-        colorResource(id = CoreR.color.weave_brand_main)
-    }
-    val actionText = if (magiskState == HomeViewModel.State.OUTDATED) {
-        context.getString(CoreR.string.update)
-    } else {
-        context.getString(CoreR.string.install)
-    }
-    val actionIcon = if (magiskState == HomeViewModel.State.OUTDATED) {
-        MiuixIcons.Update
-    } else {
-        MiuixIcons.Download
-    }
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 90f else 0f,
-        animationSpec = tween(durationMillis = 260),
-        label = "magiskCardChevronRotation"
-    )
-
-    Card(
-        modifier = Modifier
-            .padding(top = 12.dp)
-            .fillMaxWidth(),
-        pressFeedbackType = if (isInteractive) PressFeedbackType.Sink else PressFeedbackType.None,
-        onClick = if (isInteractive) onCardClick else null
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                WeaveCardIcon(
-                    isMonetTheme = isMonetTheme,
-                    modifier = Modifier.size(56.dp)
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Weave",
-                        style = MiuixTheme.textStyles.title3,
-                        color = accentColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = installedVersion,
-                        style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                when (magiskState) {
-                    HomeViewModel.State.LOADING -> {
-                        CircularProgressIndicator(
-                            size = 24.dp,
-                            strokeWidth = 2.dp
-                        )
-                    }
-
-                    else -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            InlineCardActionButton(
-                                icon = actionIcon,
-                                text = actionText,
-                                accentColor = accentColor,
-                                onPressed = onInstallClick
-                            )
-                            if (isInteractive) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = MiuixIcons.ChevronForward,
-                                    contentDescription = null,
-                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .graphicsLayer {
-                                            rotationZ = chevronRotation
-                                        }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeaveCardIcon(
-    isMonetTheme: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    if (!isMonetTheme) {
-        Image(
-            painter = painterResource(id = CoreR.drawable.ic_weave_card),
-            contentDescription = null,
-            modifier = modifier
-        )
-        return
-    }
-
-    Box(modifier = modifier) {
-        Image(
-            painter = painterResource(id = CoreR.drawable.ic_weave_card),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary),
-            modifier = Modifier.fillMaxSize()
-        )
-        Image(
-            painter = painterResource(id = CoreR.drawable.ic_weave_card_monet_detail),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.onPrimary),
-            modifier = Modifier.fillMaxSize()
-        )
-    }
-}
-
-@Composable
-private fun InlineCardActionButton(
+internal fun InlineCardActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     accentColor: Color,
@@ -409,8 +281,14 @@ internal fun ZygiskCard(
 ) {
     val context = LocalContext.current
     val statusColor = if (isEnabled) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
+    val cardModifier = modifier
+        .pressable(
+            interactionSource = null,
+            indication = TiltFeedback(),
+            delay = null
+        )
 
-    Card(modifier = modifier) {
+    Card(modifier = cardModifier, pressFeedbackType = PressFeedbackType.None) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -450,8 +328,14 @@ internal fun RamdiskCard(
 ) {
     val context = LocalContext.current
     val statusColor = if (isAvailable) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceContainer
+    val cardModifier = modifier
+        .pressable(
+            interactionSource = null,
+            indication = TiltFeedback(),
+            delay = null
+        )
 
-    Card(modifier = modifier) {
+    Card(modifier = cardModifier, pressFeedbackType = PressFeedbackType.None) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -522,8 +406,19 @@ internal fun ManagerCard(
     Card(
         modifier = Modifier
             .padding(top = 12.dp)
-            .fillMaxWidth(),
-        pressFeedbackType = if (isInteractive) PressFeedbackType.Sink else PressFeedbackType.None,
+            .fillMaxWidth()
+            .then(
+                if (isInteractive) {
+                    Modifier
+                } else {
+                    Modifier.pressable(
+                        interactionSource = null,
+                        indication = TiltFeedback(),
+                        delay = null
+                    )
+                }
+            ),
+        pressFeedbackType = if (isInteractive) PressFeedbackType.Tilt else PressFeedbackType.None,
         onClick = if (isInteractive) onCardClick else null
     ) {
         Column(
@@ -632,6 +527,10 @@ internal fun ManagerCard(
 private fun HomeItemRow(
     label: String,
     value: String,
+    labelColor: Color = MiuixTheme.colorScheme.onSurface,
+    valueColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+    labelFontSize: androidx.compose.ui.unit.TextUnit = MiuixTheme.textStyles.body2.fontSize,
+    valueFontSize: androidx.compose.ui.unit.TextUnit = MiuixTheme.textStyles.body2.fontSize,
 ) {
     Row(
         modifier = Modifier
@@ -641,15 +540,17 @@ private fun HomeItemRow(
     ) {
         Text(
             text = label,
-            style = MiuixTheme.textStyles.body2,
+            fontSize = labelFontSize,
+            fontWeight = FontWeight.Medium,
+            color = labelColor,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = value,
-            style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            fontSize = valueFontSize,
+            color = valueColor,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
             maxLines = 1,

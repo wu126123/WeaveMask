@@ -59,6 +59,7 @@ object Config : PreferenceConfig, DBConfig {
         const val ENABLE_SMOOTH_CORNER = "enable_smooth_corner"
         const val ENABLE_PREDICTIVE_BACK = "enable_predictive_back"
         const val PAGE_SCALE = "page_scale"
+        const val HOME_LAYOUT_MODE = "home_layout_mode"
 
         val NO_MIGRATION = setOf(ASKED_HOME, SU_REQUEST_TIMEOUT,
             SU_AUTO_RESPONSE, SU_REAUTH, SU_TAPJACK)
@@ -109,6 +110,10 @@ object Config : PreferenceConfig, DBConfig {
 
         // su timeout
         val TIMEOUT_LIST = longArrayOf(0, -1, 10, 20, 30, 60)
+
+        // home layout
+        const val HOME_LAYOUT_CLASSIC = 0
+        const val HOME_LAYOUT_WEAVSK = 1
     }
 
     @JvmField var keepVerity = false
@@ -130,6 +135,7 @@ object Config : PreferenceConfig, DBConfig {
     var enableSmoothCorner by preference(Key.ENABLE_SMOOTH_CORNER, true)
     var enablePredictiveBack by preference(Key.ENABLE_PREDICTIVE_BACK, false)
     var pageScale by preference(Key.PAGE_SCALE, 1.0f)
+    var homeLayoutMode by preference(Key.HOME_LAYOUT_MODE, Value.HOME_LAYOUT_CLASSIC)
 
     var enableBlur
         get() = enableBlurPrefs

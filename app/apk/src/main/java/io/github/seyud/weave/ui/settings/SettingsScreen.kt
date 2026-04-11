@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.FolderSpecial
 import androidx.compose.material.icons.rounded.Group
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LockReset
@@ -231,6 +232,7 @@ fun SettingsScreen(
                     var enableFloatingBottomBar by rememberSaveable { mutableStateOf(Config.enableFloatingBottomBar) }
                     var enableFloatingBottomBarBlur by rememberSaveable { mutableStateOf(Config.enableFloatingBottomBarBlur) }
                     var enableSmoothCorner by rememberSaveable { mutableStateOf(Config.enableSmoothCorner) }
+                    var homeLayoutMode by rememberSaveable { mutableIntStateOf(Config.homeLayoutMode) }
 
                     // 主题模式
                     val themeItems = listOf(
@@ -258,6 +260,29 @@ fun SettingsScreen(
                         onSelectedIndexChange = { index ->
                             Config.colorMode = index
                             themeMode = index
+                        }
+                    )
+
+                    val homeLayoutItems = listOf(
+                        stringResource(CoreR.string.settings_home_layout_classic),
+                        stringResource(CoreR.string.settings_home_layout_weavsk)
+                    )
+                    OverlayDropdownPreference(
+                        title = stringResource(CoreR.string.settings_home_layout),
+                        summary = stringResource(CoreR.string.settings_home_layout_summary),
+                        items = homeLayoutItems,
+                        startAction = {
+                            Icon(
+                                Icons.Rounded.Home,
+                                modifier = Modifier.padding(end = 6.dp),
+                                contentDescription = null,
+                                tint = colorScheme.onBackground
+                            )
+                        },
+                        selectedIndex = homeLayoutMode.coerceIn(0, homeLayoutItems.lastIndex),
+                        onSelectedIndexChange = { index ->
+                            Config.homeLayoutMode = index
+                            homeLayoutMode = Config.homeLayoutMode
                         }
                     )
 

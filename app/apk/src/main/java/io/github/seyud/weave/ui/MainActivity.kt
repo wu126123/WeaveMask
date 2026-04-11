@@ -82,6 +82,7 @@ import io.github.seyud.weave.ui.superuser.SuperuserViewModel
 import io.github.seyud.weave.ui.theme.LocalEnableBlur
 import io.github.seyud.weave.ui.theme.LocalEnableFloatingBottomBar
 import io.github.seyud.weave.ui.theme.LocalEnableFloatingBottomBarBlur
+import io.github.seyud.weave.ui.theme.LocalHomeLayoutMode
 import io.github.seyud.weave.ui.theme.Theme
 import io.github.seyud.weave.ui.theme.WeaveMagiskTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -217,6 +218,7 @@ class MainActivity : AppCompatActivity(), IActivityExtension, ViewModelHolder, W
             var enableFloatingBottomBarBlur by remember { mutableStateOf(Config.enableFloatingBottomBarBlur) }
             var enableSmoothCorner by remember { mutableStateOf(Config.enableSmoothCorner) }
             var pageScale by remember { mutableFloatStateOf(Config.pageScale) }
+            var homeLayoutMode by remember { mutableIntStateOf(Config.homeLayoutMode) }
 
             val darkMode = when (colorMode) {
                 2, 5 -> true
@@ -239,6 +241,7 @@ class MainActivity : AppCompatActivity(), IActivityExtension, ViewModelHolder, W
                         Config.Key.ENABLE_FLOATING_BOTTOM_BAR_BLUR -> enableFloatingBottomBarBlur = Config.enableFloatingBottomBarBlur
                         Config.Key.ENABLE_SMOOTH_CORNER -> enableSmoothCorner = Config.enableSmoothCorner
                         Config.Key.PAGE_SCALE -> pageScale = Config.pageScale
+                        Config.Key.HOME_LAYOUT_MODE -> homeLayoutMode = Config.homeLayoutMode
                     }
                 }
                 Config.prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -257,6 +260,7 @@ class MainActivity : AppCompatActivity(), IActivityExtension, ViewModelHolder, W
                 LocalEnableBlur provides enableBlur,
                 LocalEnableFloatingBottomBar provides enableFloatingBottomBar,
                 LocalEnableFloatingBottomBarBlur provides enableFloatingBottomBarBlur,
+                LocalHomeLayoutMode provides homeLayoutMode,
             ) {
                 // 处理外部应用通过"打开方式"打开 ZIP 文件
                 var externalZipUris by remember { mutableStateOf(initialExternalZipUris) }
