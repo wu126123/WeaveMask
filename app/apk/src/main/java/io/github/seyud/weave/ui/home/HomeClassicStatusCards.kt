@@ -18,8 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -186,7 +188,7 @@ private fun ClassicWeaveCardIcon(
         Image(
             painter = painterResource(id = CoreR.drawable.ic_weave_card_monet_detail),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.onPrimary),
+            colorFilter = ColorFilter.tint(lerp(MiuixTheme.colorScheme.primary, Color.White, 0.28f)),
             modifier = Modifier.fillMaxSize()
         )
     }

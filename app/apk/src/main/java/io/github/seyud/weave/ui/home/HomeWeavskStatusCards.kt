@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -117,7 +118,6 @@ internal fun WeavskMagiskCard(
             ) {
                 WeavskWeaveCardIcon(
                     isMonetTheme = isMonetTheme,
-                    contentColor = contentColor,
                     modifier = Modifier.size(56.dp)
                 )
 
@@ -260,7 +260,6 @@ internal fun WeavskStatusCard(
 @Composable
 private fun WeavskWeaveCardIcon(
     isMonetTheme: Boolean,
-    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     if (!isMonetTheme) {
@@ -282,7 +281,7 @@ private fun WeavskWeaveCardIcon(
         Image(
             painter = painterResource(id = CoreR.drawable.ic_weave_card_monet_detail),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(contentColor),
+            colorFilter = ColorFilter.tint(lerp(MiuixTheme.colorScheme.primary, Color.White, 0.28f)),
             modifier = Modifier.fillMaxSize()
         )
     }
