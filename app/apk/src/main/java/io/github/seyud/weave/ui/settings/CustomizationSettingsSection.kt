@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,17 +60,110 @@ internal fun CustomizationSettingsSection(
     var homeLayoutMode by rememberSaveable { mutableIntStateOf(Config.homeLayoutMode) }
     var themeMode by rememberSaveable { mutableIntStateOf(Config.colorMode) }
     var sliderValue by rememberSaveable { mutableStateOf(Config.pageScale) }
+    val themeModeSystem = stringResource(CoreR.string.settings_theme_mode_system)
+    val themeModeLight = stringResource(CoreR.string.settings_theme_mode_light)
+    val themeModeDark = stringResource(CoreR.string.settings_theme_mode_dark)
+    val themeModeMonetSystem = stringResource(CoreR.string.settings_theme_mode_monet_system)
+    val themeModeMonetLight = stringResource(CoreR.string.settings_theme_mode_monet_light)
+    val themeModeMonetDark = stringResource(CoreR.string.settings_theme_mode_monet_dark)
+    val themeItems = remember(
+        themeModeSystem,
+        themeModeLight,
+        themeModeDark,
+        themeModeMonetSystem,
+        themeModeMonetLight,
+        themeModeMonetDark,
+    ) {
+        listOf(
+            themeModeSystem,
+            themeModeLight,
+            themeModeDark,
+            themeModeMonetSystem,
+            themeModeMonetLight,
+            themeModeMonetDark,
+        )
+    }
+    val keyColorDefault = stringResource(CoreR.string.settings_key_color_default)
+    val colorRed = stringResource(CoreR.string.color_red)
+    val colorPink = stringResource(CoreR.string.color_pink)
+    val colorPurple = stringResource(CoreR.string.color_purple)
+    val colorDeepPurple = stringResource(CoreR.string.color_deep_purple)
+    val colorIndigo = stringResource(CoreR.string.color_indigo)
+    val colorBlue = stringResource(CoreR.string.color_blue)
+    val colorCyan = stringResource(CoreR.string.color_cyan)
+    val colorTeal = stringResource(CoreR.string.color_teal)
+    val colorGreen = stringResource(CoreR.string.color_green)
+    val colorYellow = stringResource(CoreR.string.color_yellow)
+    val colorAmber = stringResource(CoreR.string.color_amber)
+    val colorOrange = stringResource(CoreR.string.color_orange)
+    val colorBrown = stringResource(CoreR.string.color_brown)
+    val colorBlueGrey = stringResource(CoreR.string.color_blue_grey)
+    val colorSakura = stringResource(CoreR.string.color_sakura)
+    val colorItems = remember(
+        keyColorDefault,
+        colorRed,
+        colorPink,
+        colorPurple,
+        colorDeepPurple,
+        colorIndigo,
+        colorBlue,
+        colorCyan,
+        colorTeal,
+        colorGreen,
+        colorYellow,
+        colorAmber,
+        colorOrange,
+        colorBrown,
+        colorBlueGrey,
+        colorSakura,
+    ) {
+        listOf(
+            keyColorDefault,
+            colorRed,
+            colorPink,
+            colorPurple,
+            colorDeepPurple,
+            colorIndigo,
+            colorBlue,
+            colorCyan,
+            colorTeal,
+            colorGreen,
+            colorYellow,
+            colorAmber,
+            colorOrange,
+            colorBrown,
+            colorBlueGrey,
+            colorSakura,
+        )
+    }
+    val colorValues = remember {
+        listOf(
+            0,
+            Color(0xFFF44336).toArgb(),
+            Color(0xFFE91E63).toArgb(),
+            Color(0xFF9C27B0).toArgb(),
+            Color(0xFF673AB7).toArgb(),
+            Color(0xFF3F51B5).toArgb(),
+            Color(0xFF2196F3).toArgb(),
+            Color(0xFF00BCD4).toArgb(),
+            Color(0xFF009688).toArgb(),
+            Color(0xFF4FAF50).toArgb(),
+            Color(0xFFFFEB3B).toArgb(),
+            Color(0xFFFFC107).toArgb(),
+            Color(0xFFFF9800).toArgb(),
+            Color(0xFF795548).toArgb(),
+            Color(0xFF607D8F).toArgb(),
+            Color(0xFFFF9CA8).toArgb(),
+        )
+    }
+    val homeLayoutClassic = stringResource(CoreR.string.settings_home_layout_classic)
+    val homeLayoutWeavsk = stringResource(CoreR.string.settings_home_layout_weavsk)
+    val homeLayoutItems = remember(homeLayoutClassic, homeLayoutWeavsk) {
+        listOf(homeLayoutClassic, homeLayoutWeavsk)
+    }
 
     SmallTitle(text = stringResource(CoreR.string.settings_customization))
     Card(modifier = Modifier.fillMaxWidth()) {
-        val themeItems = listOf(
-            stringResource(CoreR.string.settings_theme_mode_system),
-            stringResource(CoreR.string.settings_theme_mode_light),
-            stringResource(CoreR.string.settings_theme_mode_dark),
-            stringResource(CoreR.string.settings_theme_mode_monet_system),
-            stringResource(CoreR.string.settings_theme_mode_monet_light),
-            stringResource(CoreR.string.settings_theme_mode_monet_dark),
-        )
         OverlayDropdownPreference(
             title = stringResource(CoreR.string.settings_theme),
             summary = stringResource(CoreR.string.settings_theme_summary),
@@ -90,42 +184,6 @@ internal fun CustomizationSettingsSection(
         )
 
         AnimatedVisibility(visible = themeMode in 3..5) {
-            val colorItems = listOf(
-                stringResource(CoreR.string.settings_key_color_default),
-                stringResource(CoreR.string.color_red),
-                stringResource(CoreR.string.color_pink),
-                stringResource(CoreR.string.color_purple),
-                stringResource(CoreR.string.color_deep_purple),
-                stringResource(CoreR.string.color_indigo),
-                stringResource(CoreR.string.color_blue),
-                stringResource(CoreR.string.color_cyan),
-                stringResource(CoreR.string.color_teal),
-                stringResource(CoreR.string.color_green),
-                stringResource(CoreR.string.color_yellow),
-                stringResource(CoreR.string.color_amber),
-                stringResource(CoreR.string.color_orange),
-                stringResource(CoreR.string.color_brown),
-                stringResource(CoreR.string.color_blue_grey),
-                stringResource(CoreR.string.color_sakura),
-            )
-            val colorValues = listOf(
-                0,
-                Color(0xFFF44336).toArgb(),
-                Color(0xFFE91E63).toArgb(),
-                Color(0xFF9C27B0).toArgb(),
-                Color(0xFF673AB7).toArgb(),
-                Color(0xFF3F51B5).toArgb(),
-                Color(0xFF2196F3).toArgb(),
-                Color(0xFF00BCD4).toArgb(),
-                Color(0xFF009688).toArgb(),
-                Color(0xFF4FAF50).toArgb(),
-                Color(0xFFFFEB3B).toArgb(),
-                Color(0xFFFFC107).toArgb(),
-                Color(0xFFFF9800).toArgb(),
-                Color(0xFF795548).toArgb(),
-                Color(0xFF607D8F).toArgb(),
-                Color(0xFFFF9CA8).toArgb(),
-            )
             var keyColorIndex by rememberSaveable {
                 mutableIntStateOf(
                     colorValues.indexOf(Config.keyColor).takeIf { it >= 0 } ?: 0,
@@ -152,10 +210,6 @@ internal fun CustomizationSettingsSection(
             )
         }
 
-        val homeLayoutItems = listOf(
-            stringResource(CoreR.string.settings_home_layout_classic),
-            stringResource(CoreR.string.settings_home_layout_weavsk),
-        )
         OverlayDropdownPreference(
             title = stringResource(CoreR.string.settings_home_layout),
             summary = stringResource(CoreR.string.settings_home_layout_summary),

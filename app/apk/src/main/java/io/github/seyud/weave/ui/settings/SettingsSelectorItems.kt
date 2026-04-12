@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,7 +32,7 @@ internal fun UpdateChannelSelectorItem(
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
 ) {
-    val entries = res.getStringArray(CoreR.array.update_channel)
+    val entries = remember(res) { res.getStringArray(CoreR.array.update_channel) }
 
     OverlayDropdownPreference(
         title = stringResource(CoreR.string.settings_update_channel_title),
@@ -51,7 +52,7 @@ internal fun UpdateChannelSelectorItem(
 
 @Composable
 internal fun AccessModeSelectorItem(res: Resources) {
-    val entries = res.getStringArray(CoreR.array.su_access)
+    val entries = remember(res) { res.getStringArray(CoreR.array.su_access) }
     var selected by rememberSaveable { mutableIntStateOf(Config.rootMode) }
 
     OverlayDropdownPreference(
@@ -75,8 +76,8 @@ internal fun AccessModeSelectorItem(res: Resources) {
 
 @Composable
 internal fun MultiuserModeSelectorItem(res: Resources) {
-    val entries = res.getStringArray(CoreR.array.multiuser_mode)
-    val summaries = res.getStringArray(CoreR.array.multiuser_summary)
+    val entries = remember(res) { res.getStringArray(CoreR.array.multiuser_mode) }
+    val summaries = remember(res) { res.getStringArray(CoreR.array.multiuser_summary) }
     var selected by rememberSaveable { mutableIntStateOf(Config.suMultiuserMode) }
 
     OverlayDropdownPreference(
@@ -102,8 +103,8 @@ internal fun MultiuserModeSelectorItem(res: Resources) {
 
 @Composable
 internal fun MountNamespaceModeSelectorItem(res: Resources) {
-    val entries = res.getStringArray(CoreR.array.namespace)
-    val summaries = res.getStringArray(CoreR.array.namespace_summary)
+    val entries = remember(res) { res.getStringArray(CoreR.array.namespace) }
+    val summaries = remember(res) { res.getStringArray(CoreR.array.namespace_summary) }
     var selected by rememberSaveable { mutableIntStateOf(Config.suMntNamespaceMode) }
 
     OverlayDropdownPreference(
@@ -131,7 +132,7 @@ internal fun AutomaticResponseSelectorItem(
     res: Resources,
     viewModel: SettingsViewModel,
 ) {
-    val entries = res.getStringArray(CoreR.array.auto_response)
+    val entries = remember(res) { res.getStringArray(CoreR.array.auto_response) }
     var selected by rememberSaveable { mutableIntStateOf(Config.suAutoResponse) }
 
     OverlayDropdownPreference(
@@ -164,8 +165,8 @@ internal fun AutomaticResponseSelectorItem(
 
 @Composable
 internal fun RequestTimeoutSelectorItem(res: Resources) {
-    val entries = res.getStringArray(CoreR.array.request_timeout)
-    val entryValues = listOf(10, 15, 20, 30, 45, 60)
+    val entries = remember(res) { res.getStringArray(CoreR.array.request_timeout) }
+    val entryValues = remember { listOf(10, 15, 20, 30, 45, 60) }
     var selected by rememberSaveable {
         mutableIntStateOf(
             entryValues.indexOfFirst { it == Config.suDefaultTimeout }.coerceAtLeast(0),
@@ -193,7 +194,7 @@ internal fun RequestTimeoutSelectorItem(res: Resources) {
 
 @Composable
 internal fun SUNotificationSelectorItem(res: Resources) {
-    val entries = res.getStringArray(CoreR.array.su_notification)
+    val entries = remember(res) { res.getStringArray(CoreR.array.su_notification) }
     var selected by rememberSaveable { mutableIntStateOf(Config.suNotification) }
 
     OverlayDropdownPreference(
