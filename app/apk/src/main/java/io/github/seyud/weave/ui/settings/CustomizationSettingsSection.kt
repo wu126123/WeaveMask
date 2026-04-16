@@ -13,8 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
@@ -35,6 +33,7 @@ import io.github.seyud.weave.core.App as CoreApp
 import io.github.seyud.weave.core.Config
 import io.github.seyud.weave.core.integration.AppIconManager
 import io.github.seyud.weave.core.integration.AppIconVariant
+import io.github.seyud.weave.ui.theme.MonetPresetPalette
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Slider
@@ -142,24 +141,7 @@ internal fun CustomizationSettingsSection(
         )
     }
     val colorValues = remember {
-        listOf(
-            0,
-            Color(0xFFF44336).toArgb(),
-            Color(0xFFE91E63).toArgb(),
-            Color(0xFF9C27B0).toArgb(),
-            Color(0xFF673AB7).toArgb(),
-            Color(0xFF3F51B5).toArgb(),
-            Color(0xFF2196F3).toArgb(),
-            Color(0xFF00BCD4).toArgb(),
-            Color(0xFF009688).toArgb(),
-            Color(0xFF4FAF50).toArgb(),
-            Color(0xFFFFEB3B).toArgb(),
-            Color(0xFFFFC107).toArgb(),
-            Color(0xFFFF9800).toArgb(),
-            Color(0xFF795548).toArgb(),
-            Color(0xFF607D8F).toArgb(),
-            Color(0xFFFF9CA8).toArgb(),
-        )
+        listOf(0) + MonetPresetPalette.presetKeyColors
     }
     val homeLayoutClassic = stringResource(CoreR.string.settings_home_layout_classic)
     val homeLayoutWeavsk = stringResource(CoreR.string.settings_home_layout_weavsk)
